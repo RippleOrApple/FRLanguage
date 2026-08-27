@@ -250,6 +250,51 @@ class InterpreterTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "列表索引越界"):
             self.run_source("print([1, 2][2]);")
 
+    def test_prints_map_literal(self) -> None:
+        interpreter = self.run_source('print({"name": "FR", "version": 1});')
+
+        self.assertEqual(interpreter.output, ['{"name": "FR", "version": 1}'])
+
+    def test_reads_map_key(self) -> None:
+        interpreter = self.run_source(
+            """
+            let user = {"name": "FR", "version": 1};
+            print(user["name"]);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["FR"])
+
+    def test_assigns_map_key(self) -> None:
+        interpreter = self.run_source(
+            """
+            let user = {"name": "FR", "version": 1};
+            user["version"] = 2;
+            print(user);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ['{"name": "FR", "version": 2}'])
+
+    def test_map_keeps_boolean_and_number_keys_separate(self) -> None:
+        interpreter = self.run_source(
+            """
+            let values = {true: "yes", 1: "one"};
+            print(values[true]);
+            print(values[1]);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["yes", "one"])
+
+    def test_map_key_must_be_hashable_value(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "Map key 类型不支持"):
+            self.run_source('print({"name": "FR"}[[1]]);')
+
+    def test_missing_map_key_raises_runtime_error(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "Map key 不存在"):
+            self.run_source('print({"name": "FR"}["missing"]);')
+
 
 if __name__ == "__main__":
     unittest.main()

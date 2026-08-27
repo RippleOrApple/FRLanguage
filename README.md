@@ -28,6 +28,7 @@ FRLanguage 是一个使用 Python 编写的教学型小语言项目。目标不�
 - 表达式：数字、字符串、布尔值、变量、括号、一元运算、二元运算
 - List：`[1, 2, 3]`
 - 索引读取和赋值：`items[0]`、`items[1] = 42`
+- Map：`{"name": "FR"}`
 - 条件分支：`if 条件 { ... } else { ... }`
 - 循环：`while 条件 { ... }`
 - 代码块作用域：`{ ... }`
@@ -51,6 +52,7 @@ $env:PYTHONPATH='src'; python -m frlang.main examples/hello.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/while.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/if.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/list.fr
+$env:PYTHONPATH='src'; python -m frlang.main examples/map.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/function.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/recursion.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/future.fr
@@ -91,7 +93,7 @@ print(missing);
 
 ## 后续方向
 
-- 增加 Map 字典和字符串内置函数
+- 增加字符串内置函数和文件 IO
 - 清理类型注解，减少编辑器类型检查红线
 - 增加更多错误测试
 - 做 REPL 交互式命令行

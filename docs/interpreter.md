@@ -108,10 +108,17 @@ List 字面量：
 [1, 2, 3]
 ```
 
+Map 字面量：
+
+```fr
+{"name": "FR", "version": 1}
+```
+
 索引读取：
 
 ```fr
 items[0]
+user["name"]
 ```
 
 变量赋值：
@@ -124,6 +131,7 @@ x = x + 1
 
 ```fr
 items[1] = 42
+user["version"] = 2
 ```
 
 函数调用：
@@ -220,6 +228,33 @@ print(items);
 ```
 
 索引必须是整数，越界会报运行时错误。
+
+## Map 模型
+
+Map 使用 Python 的 `dict` 作为运行时表示。
+
+当前支持：
+
+- Map 字面量
+- 索引读取
+- 索引赋值
+- 输出 Map
+
+示例：
+
+```fr
+let user = {"name": "FR", "version": 1};
+user["version"] = 2;
+print(user);
+```
+
+输出：
+
+```txt
+{"name": "FR", "version": 2}
+```
+
+Map key 当前支持字符串、数字和布尔值。读取不存在的 key 会报运行时错误。
 
 ## 输出模型
 

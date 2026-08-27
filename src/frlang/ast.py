@@ -36,6 +36,21 @@ class ListExpr(Expr):
 
 
 @dataclass(frozen=True)
+class MapEntry:
+    """Map 字面量中的一组 key/value。"""
+
+    key: Expr
+    value: Expr
+
+
+@dataclass(frozen=True)
+class MapExpr(Expr):
+    """Map 字面量表达式。"""
+
+    entries: list[MapEntry]
+
+
+@dataclass(frozen=True)
 class IndexExpr(Expr):
     """索引读取表达式。"""
 

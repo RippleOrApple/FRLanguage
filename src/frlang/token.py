@@ -15,6 +15,7 @@ class TokenType(Enum):
     LEFT_BRACKET = auto()
     RIGHT_BRACKET = auto()
     COMMA = auto()
+    COLON = auto()
     DOT = auto()
     MINUS = auto()
     PLUS = auto()

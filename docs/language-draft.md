@@ -63,6 +63,16 @@ items[1] = 42;
 print(items);
 ```
 
+## Map
+
+```fr
+let user = {"name": "FR", "version": 1};
+print(user["name"]);
+
+user["version"] = 2;
+print(user);
+```
+
 ## 函数
 
 ```fr

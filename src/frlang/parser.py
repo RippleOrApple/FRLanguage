@@ -16,6 +16,8 @@ from .ast import (
     IndexExpr,
     ListExpr,
     LiteralExpr,
+    MapEntry,
+    MapExpr,
     PrintStmt,
     Program,
     ReturnStmt,
@@ -271,6 +273,8 @@ class Parser:
             keyword = self.previous()
             self.consume(TokenType.LEFT_BRACE, "future 后需要 '{'")
             return FutureExpr(keyword=keyword, body=self.block())
+        if self.match(TokenType.LEFT_BRACE):
+            return self.map_literal()
         if self.match(TokenType.LEFT_BRACKET):
             return self.list_literal()
         if self.match(TokenType.LEFT_PAREN):
@@ -293,6 +297,20 @@ class Parser:
 
         self.consume(TokenType.RIGHT_BRACKET, "列表字面量缺少 ']'")
         return ListExpr(elements)
+
+    def map_literal(self) -> Expr:
+        entries: list[MapEntry] = []
+        if not self.check(TokenType.RIGHT_BRACE):
+            while True:
+                key = self.expression()
+                self.consume(TokenType.COLON, "Map key 后需要 ':'")
+                value = self.expression()
+                entries.append(MapEntry(key=key, value=value))
+                if not self.match(TokenType.COMMA):
+                    break
+
+        self.consume(TokenType.RIGHT_BRACE, "Map 字面量缺少 '}'")
+        return MapExpr(entries)
 
     def match(self, *types: TokenType) -> bool:
         for token_type in types:

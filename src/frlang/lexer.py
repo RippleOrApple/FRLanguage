@@ -63,6 +63,8 @@ class Lexer:
                 self.add_token(TokenType.RIGHT_BRACKET)
             case ",":
                 self.add_token(TokenType.COMMA)
+            case ":":
+                self.add_token(TokenType.COLON)
             case ".":
                 self.add_token(TokenType.DOT)
             case "-":

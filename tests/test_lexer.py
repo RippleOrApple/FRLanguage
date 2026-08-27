@@ -92,6 +92,19 @@ class LexerTest(unittest.TestCase):
             ],
         )
 
+    def test_scans_map_colon(self) -> None:
+        self.assertEqual(
+            self.token_types('{"name": "FR"}'),
+            [
+                TokenType.LEFT_BRACE,
+                TokenType.STRING,
+                TokenType.COLON,
+                TokenType.STRING,
+                TokenType.RIGHT_BRACE,
+                TokenType.EOF,
+            ],
+        )
+
     def test_ignores_line_comments(self) -> None:
         tokens = self.token_types("let x = 1; // ignore this\nprint(x);")
 

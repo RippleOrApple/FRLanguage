@@ -1,5 +1,6 @@
 """解释器核心。"""
 
+from dataclasses import dataclass
 from typing import Any
 
 from .ast import (
@@ -18,6 +19,7 @@ from .ast import (
     IndexExpr,
     ListExpr,
     LiteralExpr,
+    MapExpr,
     PrintStmt,
     Program,
     ReturnStmt,
@@ -39,6 +41,14 @@ class ReturnSignal(Exception):
 
     def __init__(self, value: Any) -> None:
         self.value = value
+
+
+@dataclass(frozen=True)
+class MapKey:
+    """Map 运行时使用的内部 key，避免 true 和 1 在 Python dict 中混淆。"""
+
+    kind: str
+    value: Any
 
 
 class FRFunction:
@@ -143,6 +153,14 @@ class Interpreter:
         if isinstance(expression, ListExpr):
             return [self.evaluate(element) for element in expression.elements]
 
+        if isinstance(expression, MapExpr):
+            values: dict[Any, Any] = {}
+            for entry in expression.entries:
+                key = self.evaluate(entry.key)
+                normalized_key = self.normalize_map_key(expression=entry.key, key=key)
+                values[normalized_key] = self.evaluate(entry.value)
+            return values
+
         if isinstance(expression, VariableExpr):
             return self.environment.get(expression.name)
 
@@ -155,11 +173,16 @@ class Interpreter:
             target = self.evaluate(expression.target)
             index = self.evaluate(expression.index)
             value = self.evaluate(expression.value)
-            normalized_index = self.normalize_list_index(expression.bracket, index)
-            if not isinstance(target, list):
-                self.raise_runtime_error(expression.bracket, "只能给列表索引赋值")
-            self.check_list_index_range(expression.bracket, target, normalized_index)
-            target[normalized_index] = value
+            if isinstance(target, list):
+                normalized_index = self.normalize_list_index(expression.bracket, index)
+                self.check_list_index_range(expression.bracket, target, normalized_index)
+                target[normalized_index] = value
+                return value
+            if isinstance(target, dict):
+                normalized_key = self.normalize_map_key_token(expression.bracket, index)
+                target[normalized_key] = value
+                return value
+            self.raise_runtime_error(expression.bracket, "只能给 List 或 Map 索引赋值")
             return value
 
         if isinstance(expression, GroupingExpr):
@@ -217,11 +240,16 @@ class Interpreter:
         if isinstance(expression, IndexExpr):
             target = self.evaluate(expression.target)
             index = self.evaluate(expression.index)
-            normalized_index = self.normalize_list_index(expression.bracket, index)
-            if not isinstance(target, list):
-                self.raise_runtime_error(expression.bracket, "只能读取列表索引")
-            self.check_list_index_range(expression.bracket, target, normalized_index)
-            return target[normalized_index]
+            if isinstance(target, list):
+                normalized_index = self.normalize_list_index(expression.bracket, index)
+                self.check_list_index_range(expression.bracket, target, normalized_index)
+                return target[normalized_index]
+            if isinstance(target, dict):
+                normalized_key = self.normalize_map_key_token(expression.bracket, index)
+                if normalized_key not in target:
+                    self.raise_runtime_error(expression.bracket, "Map key 不存在")
+                return target[normalized_key]
+            self.raise_runtime_error(expression.bracket, "只能读取 List 或 Map 索引")
 
         if isinstance(expression, UnaryExpr):
             right = self.evaluate(expression.right)
@@ -298,9 +326,27 @@ class Interpreter:
         if isinstance(value, list):
             elements = [Interpreter.stringify(element) for element in value]
             return "[" + ", ".join(elements) + "]"
+        if isinstance(value, dict):
+            entries = [
+                f"{Interpreter.stringify_map_key(key)}: {Interpreter.stringify_map_part(item)}"
+                for key, item in value.items()
+            ]
+            return "{" + ", ".join(entries) + "}"
         if isinstance(value, float) and value.is_integer():
             return str(int(value))
         return str(value)
+
+    @staticmethod
+    def stringify_map_part(value: Any) -> str:
+        if isinstance(value, str):
+            return f'"{value}"'
+        return Interpreter.stringify(value)
+
+    @staticmethod
+    def stringify_map_key(value: Any) -> str:
+        if isinstance(value, MapKey):
+            return Interpreter.stringify_map_part(value.value)
+        return Interpreter.stringify_map_part(value)
 
     @staticmethod
     def are_numbers(left: Any, right: Any) -> bool:
@@ -329,6 +375,54 @@ class Interpreter:
     ) -> None:
         if index < 0 or index >= len(target):
             self.raise_runtime_error(operator, "列表索引越界")
+
+    def normalize_map_key(self, expression: Expr, key: Any) -> MapKey:
+        normalized_key = self.build_map_key(key)
+        if normalized_key is not None:
+            return normalized_key
+        self.raise_expression_runtime_error(expression, "Map key 类型不支持")
+
+    def normalize_map_key_token(self, operator: Token, key: Any) -> MapKey:
+        normalized_key = self.build_map_key(key)
+        if normalized_key is not None:
+            return normalized_key
+        self.raise_runtime_error(operator, "Map key 类型不支持")
+
+    @staticmethod
+    def build_map_key(key: Any) -> MapKey | None:
+        if isinstance(key, bool):
+            return MapKey("bool", key)
+        if isinstance(key, str):
+            return MapKey("string", key)
+        if isinstance(key, (int, float)):
+            return MapKey("number", key)
+        return None
+
+    def raise_expression_runtime_error(self, expression: Expr, message: str) -> None:
+        token = self.token_for_expression(expression)
+        self.raise_runtime_error(token, message)
+
+    @staticmethod
+    def token_for_expression(expression: Expr) -> Token:
+        if isinstance(expression, VariableExpr):
+            return expression.name
+        if isinstance(expression, AssignExpr):
+            return expression.name
+        if isinstance(expression, IndexExpr):
+            return expression.bracket
+        if isinstance(expression, IndexAssignExpr):
+            return expression.bracket
+        if isinstance(expression, AwaitExpr):
+            return expression.keyword
+        if isinstance(expression, FutureExpr):
+            return expression.keyword
+        if isinstance(expression, CallExpr):
+            return expression.paren
+        if isinstance(expression, BinaryExpr):
+            return expression.operator
+        if isinstance(expression, UnaryExpr):
+            return expression.operator
+        return Token(TokenType.EOF, "", None, 1, 1)
 
     @staticmethod
     def raise_runtime_error(operator: Token, message: str) -> None:

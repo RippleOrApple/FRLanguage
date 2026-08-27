@@ -162,10 +162,17 @@ List 字面量：
 [1, 2, 3]
 ```
 
+Map 字面量：
+
+```fr
+{"name": "FR", "version": 1}
+```
+
 索引读取：
 
 ```fr
 items[0]
+user["name"]
 ```
 
 括号表达式：
@@ -199,6 +206,7 @@ answer = answer + 1
 
 ```fr
 items[1] = 42
+user["version"] = 2
 ```
 
 函数调用：
@@ -249,6 +257,7 @@ print(1 + 2 * 3);
 - `LiteralExpr`
 - `VariableExpr`
 - `ListExpr`
+- `MapExpr`
 - `IndexExpr`
 - `AssignExpr`
 - `IndexAssignExpr`
