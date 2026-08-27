@@ -1,0 +1,100 @@
+# 语言设计草案
+
+本文档记录 FRLanguage 第一版语法草案。后续实现时可以根据复杂度继续调整。
+
+## 文件扩展名
+
+建议使用：
+
+```txt
+.fr
+```
+
+## 变量
+
+```fr
+let name = "FRLanguage";
+let count = 3;
+```
+
+## 输出
+
+```fr
+print("hello");
+print(1 + 2);
+```
+
+## 条件分支
+
+```fr
+if count >= 60 {
+  print("pass");
+} else {
+  print("fail");
+}
+```
+
+## 循环
+
+```fr
+let i = 0;
+
+while i < 3 {
+  print(i);
+  i = i + 1;
+}
+```
+
+## 赋值
+
+```fr
+let count = 1;
+count = count + 1;
+print(count);
+```
+
+## 函数
+
+```fr
+fn add(a, b) {
+  return a + b;
+}
+
+print(add(1, 2));
+```
+
+递归函数：
+
+```fr
+fn fact(n) {
+  if n <= 1 {
+    return 1;
+  }
+
+  return n * fact(n - 1);
+}
+
+print(fact(5));
+```
+
+## Future
+
+第一版 Future 目标是学习异步模型，不追求真正并行。
+
+```fr
+fn delayValue(x) {
+  return future {
+    return x * 2;
+  };
+}
+
+let value = await delayValue(21);
+print(value);
+```
+
+## 设计取舍
+
+- 第一版使用解释执行，不生成字节码。
+- 第一版使用动态类型，不做静态类型检查。
+- 第一版 Future 使用协作式调度，不做多线程。
+- 第一版优先保证代码结构清楚，而不是追求性能。
