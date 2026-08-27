@@ -1,0 +1,8 @@
+fn delayValue(x) {
+  return future {
+    return x * 2;
+  };
+}
+
+let value = await delayValue(21);
+print(value);

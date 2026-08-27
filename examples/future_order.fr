@@ -1,0 +1,7 @@
+let value = future {
+  print("future");
+  return 42;
+};
+
+print("before");
+print(await value);
