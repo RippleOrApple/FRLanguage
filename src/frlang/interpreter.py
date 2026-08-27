@@ -43,6 +43,7 @@ class ReturnSignal(Exception):
     """函数 return 使用的内部控制流信号。"""
 
     def __init__(self, value: Any) -> None:
+        """保存 return 后面的值，交给函数调用边界处理。"""
         self.value = value
 
 
@@ -50,6 +51,7 @@ class BreakSignal(Exception):
     """break 使用的内部控制流信号。"""
 
     def __init__(self, keyword: Token) -> None:
+        """保存 break 关键字位置，便于非法使用时输出准确行列号。"""
         self.keyword = keyword
 
 
@@ -65,6 +67,10 @@ class FRFunction:
     """FRLanguage 函数对象。"""
 
     def __init__(self, declaration: FunctionStmt, closure: Environment) -> None:
+        """保存函数声明和声明时的外层环境。
+
+        `closure` 让函数调用时仍能访问定义位置附近的变量，递归函数也依赖这个环境模型。
+        """
         self.declaration = declaration
         self.closure = closure
 
@@ -74,6 +80,11 @@ class FRFunction:
         arguments: list[Any],
         call_token: Token,
     ) -> Any:
+        """调用用户用 FR 写的函数。
+
+        每次调用都会创建新的局部环境，把参数名绑定到实参值，然后执行函数体。
+        `return` 通过 ReturnSignal 提前离开函数体。
+        """
         environment = Environment(self.closure)
         for param, argument in zip(self.declaration.params, arguments):
             environment.define(param.lexeme, argument)
@@ -88,9 +99,11 @@ class FRFunction:
         return None
 
     def arity(self) -> int:
+        """返回函数需要的参数数量。"""
         return len(self.declaration.params)
 
     def __str__(self) -> str:
+        """返回调试用的函数显示文本。"""
         return f"<fn {self.declaration.name.lexeme}>"
 
 
@@ -103,6 +116,7 @@ class FRNativeFunction:
         arity: int,
         function: Callable[["Interpreter", list[Any], Token], Any],
     ) -> None:
+        """创建一个由 Python 实现的 FR 原生函数。"""
         self.name = name
         self._arity = arity
         self.function = function
@@ -113,12 +127,15 @@ class FRNativeFunction:
         arguments: list[Any],
         call_token: Token,
     ) -> Any:
+        """调用原生函数实现。"""
         return self.function(interpreter, arguments, call_token)
 
     def arity(self) -> int:
+        """返回原生函数需要的参数数量。"""
         return self._arity
 
     def __str__(self) -> str:
+        """返回调试用的原生函数显示文本。"""
         return f"<native fn {self.name}>"
 
 
@@ -126,6 +143,11 @@ class Interpreter:
     """执行 FRLanguage AST。"""
 
     def __init__(self, base_path: Path | str | None = None) -> None:
+        """初始化解释器状态。
+
+        `globals` 保存全局变量和内置函数，`environment` 指向当前作用域。
+        `base_path` 是 `readFile` 和 `import` 解析相对路径的起点。
+        """
         self.globals = Environment()
         self.environment = self.globals
         self.runtime = Runtime()
@@ -143,6 +165,10 @@ class Interpreter:
                 self.raise_runtime_error(signal.keyword, "break 只能用于 while 循环")
 
     def execute(self, statement: Stmt) -> None:
+        """执行一条语句节点。
+
+        语句通常产生副作用或控制流变化，例如定义变量、输出、循环、导入和 return。
+        """
         if isinstance(statement, VarStmt):
             value = None
             if statement.initializer is not None:
@@ -199,6 +225,10 @@ class Interpreter:
         raise FRRuntimeError(f"不支持的语句类型：{type(statement).__name__}")
 
     def execute_block(self, statements: list[Stmt], environment: Environment) -> None:
+        """在新的局部环境中执行一组语句。
+
+        执行结束后必须恢复旧环境；即使中途 return/break/报错，也要保证作用域不会泄漏。
+        """
         previous = self.environment
         try:
             self.environment = environment
@@ -208,6 +238,11 @@ class Interpreter:
             self.environment = previous
 
     def execute_import(self, statement: ImportStmt) -> None:
+        """执行 `import "file.fr";`。
+
+        导入文件复用当前解释器和全局环境，因此 helper 文件里的函数能被主文件继续调用。
+        `imported_paths` 防止同一个文件被重复执行。
+        """
         target_path = self.resolve_relative_path(
             statement.path,
             statement.path.literal,
@@ -236,6 +271,10 @@ class Interpreter:
             self.base_path = previous_base_path
 
     def evaluate(self, expression: Expr) -> Any:
+        """计算表达式节点并返回运行时值。
+
+        表达式会产生值，例如数字、字符串、函数调用结果、List、Map 或 Future。
+        """
         if isinstance(expression, LiteralExpr):
             return expression.value
 
@@ -297,6 +336,7 @@ class Interpreter:
             closure = self.environment
 
             def run_future_block() -> None:
+                """在 Runtime 队列中执行 future 块，并把结果写回 Future。"""
                 try:
                     self.execute_block(expression.body, Environment(closure))
                 except ReturnSignal as signal:
@@ -417,6 +457,10 @@ class Interpreter:
 
     @staticmethod
     def is_truthy(value: Any) -> bool:
+        """按照 FR 的规则判断一个值是否为真。
+
+        当前只有 nil 和 false 为假，其他值都按真处理。
+        """
         if value is None:
             return False
         if isinstance(value, bool):
@@ -424,6 +468,7 @@ class Interpreter:
         return True
 
     def define_native_functions(self) -> None:
+        """把内置函数注册到全局环境。"""
         natives = [
             FRNativeFunction("len", 1, Interpreter.native_len),
             FRNativeFunction("charAt", 2, Interpreter.native_char_at),
@@ -440,6 +485,7 @@ class Interpreter:
 
     @staticmethod
     def native_len(interpreter: "Interpreter", arguments: list[Any], token: Token) -> int:
+        """实现 `len(value)`：读取字符串、List 或 Map 的长度。"""
         value = arguments[0]
         if isinstance(value, (str, list, dict)):
             return len(value)
@@ -451,6 +497,7 @@ class Interpreter:
         arguments: list[Any],
         token: Token,
     ) -> str:
+        """实现 `charAt(text, index)`：读取字符串指定位置字符。"""
         text = arguments[0]
         index = arguments[1]
         if not isinstance(text, str):
@@ -467,6 +514,7 @@ class Interpreter:
         arguments: list[Any],
         token: Token,
     ) -> str:
+        """实现 `substring(text, start, end)`：截取字符串片段。"""
         text = arguments[0]
         start = arguments[1]
         end = arguments[2]
@@ -486,6 +534,7 @@ class Interpreter:
         arguments: list[Any],
         token: Token,
     ) -> str:
+        """实现 `type(value)`：返回 FR 视角下的运行时类型名称。"""
         value = arguments[0]
         if value is None:
             return "nil"
@@ -507,6 +556,7 @@ class Interpreter:
 
     @staticmethod
     def native_str(interpreter: "Interpreter", arguments: list[Any], token: Token) -> str:
+        """实现 `str(value)`：复用解释器输出规则转换成字符串。"""
         return interpreter.stringify(arguments[0])
 
     @staticmethod
@@ -515,6 +565,7 @@ class Interpreter:
         arguments: list[Any],
         token: Token,
     ) -> int | float:
+        """实现 `number(value)`：把数字或数字字符串转换成 number。"""
         value = arguments[0]
         if isinstance(value, bool):
             interpreter.raise_runtime_error(token, "number 参数必须是字符串或数字")
@@ -534,6 +585,7 @@ class Interpreter:
 
     @staticmethod
     def native_push(interpreter: "Interpreter", arguments: list[Any], token: Token) -> int:
+        """实现 `push(list, value)`：追加元素并返回新的 List 长度。"""
         target = arguments[0]
         if not isinstance(target, list):
             interpreter.raise_runtime_error(token, "push 第 1 个参数必须是 List")
@@ -542,6 +594,7 @@ class Interpreter:
 
     @staticmethod
     def native_pop(interpreter: "Interpreter", arguments: list[Any], token: Token) -> Any:
+        """实现 `pop(list)`：移除并返回 List 末尾元素。"""
         target = arguments[0]
         if not isinstance(target, list):
             interpreter.raise_runtime_error(token, "pop 参数必须是 List")
@@ -555,6 +608,7 @@ class Interpreter:
         arguments: list[Any],
         token: Token,
     ) -> str:
+        """实现 `readFile(path)`：读取 base_path 内的 UTF-8 文本。"""
         path = arguments[0]
         if not isinstance(path, str):
             interpreter.raise_runtime_error(token, "readFile 参数必须是字符串")
@@ -567,6 +621,10 @@ class Interpreter:
             interpreter.raise_runtime_error(token, f"readFile 读取失败：{error}")
 
     def resolve_relative_path(self, token: Token, path: str, label: str) -> Path:
+        """解析受限制的相对路径。
+
+        `readFile` 和 `import` 都走这里，统一拒绝绝对路径和跳出当前 base_path 的路径。
+        """
         requested_path = Path(path)
         if requested_path.is_absolute():
             self.raise_runtime_error(token, f"{label} 只支持相对路径")
@@ -581,6 +639,7 @@ class Interpreter:
 
     @staticmethod
     def stringify(value: Any) -> str:
+        """把运行时值转换成 FR 输出文本。"""
         if value is None:
             return "nil"
         if isinstance(value, bool):
@@ -600,31 +659,37 @@ class Interpreter:
 
     @staticmethod
     def stringify_map_part(value: Any) -> str:
+        """把 Map 的 key/value 转成更像 FR 字面量的文本。"""
         if isinstance(value, str):
             return f'"{value}"'
         return Interpreter.stringify(value)
 
     @staticmethod
     def stringify_map_key(value: Any) -> str:
+        """把内部 MapKey 还原成用户能理解的 key 文本。"""
         if isinstance(value, MapKey):
             return Interpreter.stringify_map_part(value.value)
         return Interpreter.stringify_map_part(value)
 
     @staticmethod
     def are_numbers(left: Any, right: Any) -> bool:
+        """判断两个值是否都能作为数字运算数。"""
         return isinstance(left, (int, float)) and isinstance(right, (int, float))
 
     def check_number_operand(self, operator: Token, operand: Any) -> None:
+        """检查一元数字运算的操作数类型。"""
         if isinstance(operand, (int, float)):
             return
         self.raise_runtime_error(operator, "操作数必须是数字")
 
     def check_number_operands(self, operator: Token, left: Any, right: Any) -> None:
+        """检查二元数字运算的左右操作数类型。"""
         if self.are_numbers(left, right):
             return
         self.raise_runtime_error(operator, "操作数必须是数字")
 
     def normalize_list_index(self, operator: Token, index: Any) -> int:
+        """把 List 索引规范成整数，并拒绝 bool 和非整数。"""
         if isinstance(index, bool) or not isinstance(index, int):
             self.raise_runtime_error(operator, "列表索引必须是数字")
         return index
@@ -635,16 +700,19 @@ class Interpreter:
         target: list[Any],
         index: int,
     ) -> None:
+        """检查 List 索引是否在合法范围内。"""
         if index < 0 or index >= len(target):
             self.raise_runtime_error(operator, "列表索引越界")
 
     def normalize_map_key(self, expression: Expr, key: Any) -> MapKey:
+        """把 Map 字面量中的 key 转成内部 MapKey。"""
         normalized_key = self.build_map_key(key)
         if normalized_key is not None:
             return normalized_key
         self.raise_expression_runtime_error(expression, "Map key 类型不支持")
 
     def normalize_map_key_token(self, operator: Token, key: Any) -> MapKey:
+        """把索引表达式中的 Map key 转成内部 MapKey。"""
         normalized_key = self.build_map_key(key)
         if normalized_key is not None:
             return normalized_key
@@ -652,6 +720,10 @@ class Interpreter:
 
     @staticmethod
     def build_map_key(key: Any) -> MapKey | None:
+        """构造内部 MapKey。
+
+        Python 里 `True == 1`，所以这里带上 kind，避免 FR 的 true 和 1 混成同一个 key。
+        """
         if isinstance(key, bool):
             return MapKey("bool", key)
         if isinstance(key, str):
@@ -661,11 +733,13 @@ class Interpreter:
         return None
 
     def raise_expression_runtime_error(self, expression: Expr, message: str) -> None:
+        """根据表达式尽量找出合适的 Token，再抛出运行时错误。"""
         token = self.token_for_expression(expression)
         self.raise_runtime_error(token, message)
 
     @staticmethod
     def token_for_expression(expression: Expr) -> Token:
+        """为表达式选择一个用于报错定位的 Token。"""
         if isinstance(expression, VariableExpr):
             return expression.name
         if isinstance(expression, AssignExpr):
@@ -688,6 +762,7 @@ class Interpreter:
 
     @staticmethod
     def raise_runtime_error(operator: Token, message: str) -> None:
+        """抛出带行列号的运行时错误。"""
         raise FRRuntimeError(
             f"第 {operator.line} 行，第 {operator.column} 列：{message}"
         )

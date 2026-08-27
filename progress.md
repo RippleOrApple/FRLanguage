@@ -42,3 +42,6 @@
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_demo.fr`：导入 helper 后输出 Token 列表。
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/builtins.fr`：通过。
+- 给 `src/frlang/lexer.py`、`src/frlang/parser.py`、`src/frlang/interpreter.py` 和 `src/frlang/main.py` 增加中文函数说明，重点解释扫描游标、递归下降优先级、执行模型、内置函数、import/readFile 路径约束和 Map key 规范化。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：67 个测试通过。

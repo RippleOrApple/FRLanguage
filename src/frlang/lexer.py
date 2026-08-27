@@ -29,6 +29,11 @@ class Lexer:
     """把源码字符串转换为 Token 列表。"""
 
     def __init__(self, source: str) -> None:
+        """初始化扫描状态。
+
+        `start` 指向当前 Token 的起点，`current` 指向下一个将被读取的字符。
+        行列信息分成当前位置和 Token 起始位置，方便错误信息定位到词素开头。
+        """
         self.source = source
         self.tokens: list[Token] = []
         self.start = 0
@@ -50,6 +55,11 @@ class Lexer:
         return self.tokens
 
     def scan_token(self) -> None:
+        """扫描一个 Token。
+
+        这个函数只看当前字符以及必要的下一个字符，不理解语法结构。
+        例如 `!=` 会在这里变成一个 Token，但 `a != b` 的表达式关系由 Parser 处理。
+        """
         char = self.advance()
 
         match char:
@@ -107,6 +117,11 @@ class Lexer:
                     self.raise_error(f"无法识别的字符：{char}")
 
     def identifier(self) -> None:
+        """扫描标识符或关键字。
+
+        标识符会一直读到不是字母、数字或下划线的位置。
+        扫描结束后再查 `KEYWORDS`，决定它是普通变量名还是语言关键字。
+        """
         while self.is_identifier_part(self.peek()):
             self.advance()
 
@@ -116,6 +131,10 @@ class Lexer:
         self.add_token(token_type, literal)
 
     def number(self) -> None:
+        """扫描整数或小数数字字面量。
+
+        数字在遇到非数字字符时结束；如果遇到 `.` 且后面还是数字，就继续读取小数部分。
+        """
         while self.peek().isdigit():
             self.advance()
 
@@ -133,6 +152,10 @@ class Lexer:
         self.add_token(TokenType.NUMBER, literal)
 
     def string(self) -> None:
+        """扫描双引号字符串字面量。
+
+        字符串一直读到下一个 `"`。当前实现不处理转义字符，未闭合字符串会抛出词法错误。
+        """
         while self.peek() != '"' and not self.is_at_end():
             self.advance()
 
@@ -144,16 +167,28 @@ class Lexer:
         self.add_token(TokenType.STRING, literal)
 
     def skip_line_comment(self) -> None:
+        """跳过 `//` 单行注释。
+
+        注释内容不会生成 Token，扫描会停在换行符或源码末尾。
+        """
         while self.peek() != "\n" and not self.is_at_end():
             self.advance()
 
     def add_token(self, token_type: TokenType, literal: Any = None) -> None:
+        """把当前词素保存成 Token。
+
+        `lexeme` 保留源码原文，`literal` 保存已经转换好的运行时值，例如数字和字符串内容。
+        """
         text = self.source[self.start : self.current]
         self.tokens.append(
             Token(token_type, text, literal, self.start_line, self.start_column)
         )
 
     def advance(self) -> str:
+        """读取当前字符并前进一个位置。
+
+        所有真正消耗字符的地方都走这里，这样行号和列号可以集中维护。
+        """
         char = self.source[self.current]
         self.current += 1
         if char == "\n":
@@ -164,6 +199,10 @@ class Lexer:
         return char
 
     def match(self, expected: str) -> bool:
+        """如果下一个字符是期望字符，就消费它并返回 True。
+
+        主要用于识别两个字符的运算符，例如 `!=`、`==`、`<=`、`>=` 和 `//`。
+        """
         if self.is_at_end() or self.source[self.current] != expected:
             return False
 
@@ -171,25 +210,33 @@ class Lexer:
         return True
 
     def peek(self) -> str:
+        """查看当前字符但不消费它。"""
         if self.is_at_end():
             return "\0"
         return self.source[self.current]
 
     def peek_next(self) -> str:
+        """查看当前字符后面的一个字符但不消费它。"""
         if self.current + 1 >= len(self.source):
             return "\0"
         return self.source[self.current + 1]
 
     def is_at_end(self) -> bool:
+        """判断扫描游标是否已经到达源码末尾。"""
         return self.current >= len(self.source)
 
     def raise_error(self, message: str) -> None:
+        """抛出带行列号的词法错误。"""
         raise LexerError(
             f"第 {self.start_line} 行，第 {self.start_column} 列：{message}"
         )
 
     @staticmethod
     def keyword_literal(token_type: TokenType) -> Any:
+        """返回关键字自带的字面量值。
+
+        目前只有 `true` 和 `false` 在词法阶段就能转换成布尔值，其他关键字没有 literal。
+        """
         if token_type is TokenType.TRUE:
             return True
         if token_type is TokenType.FALSE:
@@ -198,8 +245,10 @@ class Lexer:
 
     @staticmethod
     def is_identifier_start(char: str) -> bool:
+        """判断字符是否能作为标识符开头。"""
         return char.isalpha() or char == "_"
 
     @staticmethod
     def is_identifier_part(char: str) -> bool:
+        """判断字符是否能作为标识符后续部分。"""
         return char.isalnum() or char == "_"
