@@ -45,3 +45,5 @@
 - 给 `src/frlang/lexer.py`、`src/frlang/parser.py`、`src/frlang/interpreter.py` 和 `src/frlang/main.py` 增加中文函数说明，重点解释扫描游标、递归下降优先级、执行模型、内置函数、import/readFile 路径约束和 Map key 规范化。
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：67 个测试通过。
+- 为导入文件中的语言错误补充上下文，例如 `导入 "helper.fr" 时出错：...`。
+- 新增解释器和 CLI 测试，覆盖导入文件内部运行时错误的报错信息。

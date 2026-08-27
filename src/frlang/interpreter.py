@@ -33,6 +33,7 @@ from .ast import (
     WhileStmt,
 )
 from .environment import Environment
+from .errors import FRLanguageError
 from .errors import RuntimeError as FRRuntimeError
 from .future import Future, FutureState
 from .runtime import Runtime
@@ -260,13 +261,18 @@ class Interpreter:
         from .lexer import Lexer
         from .parser import Parser
 
-        tokens = Lexer(source).scan_tokens()
-        program = Parser(tokens).parse()
-
         previous_base_path = self.base_path
         try:
+            tokens = Lexer(source).scan_tokens()
+            program = Parser(tokens).parse()
             self.base_path = target_path.parent
             self.interpret(program)
+        except FRLanguageError as error:
+            self.imported_paths.discard(target_path)
+            self.raise_runtime_error(
+                statement.path,
+                f'导入 "{statement.path.literal}" 时出错：{error}',
+            )
         finally:
             self.base_path = previous_base_path
 

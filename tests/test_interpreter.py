@@ -175,6 +175,20 @@ class InterpreterTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "import 不能读取工作目录外的文件"):
                 self.run_source('import "../outside.fr";', base_path=base_path)
 
+    def test_import_adds_context_to_language_errors(self) -> None:
+        with TemporaryDirectory() as directory:
+            base_path = Path(directory)
+            (base_path / "helper.fr").write_text(
+                "print(missing);\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(
+                RuntimeError,
+                '导入 "helper.fr" 时出错.*变量 missing 未定义',
+            ):
+                self.run_source('import "helper.fr";', base_path=base_path)
+
     def test_runs_if_then_branch(self) -> None:
         interpreter = self.run_source(
             """

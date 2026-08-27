@@ -70,6 +70,23 @@ class MainTest(unittest.TestCase):
         self.assertIn("变量 missing 未定义", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 
+    def test_main_reports_import_error_context_without_traceback(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source_path = Path(directory) / "program.fr"
+            helper_path = Path(directory) / "helper.fr"
+            helper_path.write_text("print(missing);\n", encoding="utf-8")
+            source_path.write_text('import "helper.fr";\n', encoding="utf-8")
+
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                with self.assertRaises(SystemExit) as exit_context:
+                    main([str(source_path)])
+
+        self.assertEqual(exit_context.exception.code, 70)
+        self.assertIn('导入 "helper.fr" 时出错', stderr.getvalue())
+        self.assertIn("变量 missing 未定义", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
     def test_main_reports_missing_file_without_traceback(self) -> None:
         stderr = io.StringIO()
 
