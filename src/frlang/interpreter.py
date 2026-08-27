@@ -14,6 +14,9 @@ from .ast import (
     FutureExpr,
     GroupingExpr,
     IfStmt,
+    IndexAssignExpr,
+    IndexExpr,
+    ListExpr,
     LiteralExpr,
     PrintStmt,
     Program,
@@ -137,12 +140,26 @@ class Interpreter:
         if isinstance(expression, LiteralExpr):
             return expression.value
 
+        if isinstance(expression, ListExpr):
+            return [self.evaluate(element) for element in expression.elements]
+
         if isinstance(expression, VariableExpr):
             return self.environment.get(expression.name)
 
         if isinstance(expression, AssignExpr):
             value = self.evaluate(expression.value)
             self.environment.assign(expression.name, value)
+            return value
+
+        if isinstance(expression, IndexAssignExpr):
+            target = self.evaluate(expression.target)
+            index = self.evaluate(expression.index)
+            value = self.evaluate(expression.value)
+            normalized_index = self.normalize_list_index(expression.bracket, index)
+            if not isinstance(target, list):
+                self.raise_runtime_error(expression.bracket, "只能给列表索引赋值")
+            self.check_list_index_range(expression.bracket, target, normalized_index)
+            target[normalized_index] = value
             return value
 
         if isinstance(expression, GroupingExpr):
@@ -196,6 +213,15 @@ class Interpreter:
                 self.raise_runtime_error(expression.keyword, "Future 执行失败")
 
             self.raise_runtime_error(expression.keyword, "Future 尚未完成")
+
+        if isinstance(expression, IndexExpr):
+            target = self.evaluate(expression.target)
+            index = self.evaluate(expression.index)
+            normalized_index = self.normalize_list_index(expression.bracket, index)
+            if not isinstance(target, list):
+                self.raise_runtime_error(expression.bracket, "只能读取列表索引")
+            self.check_list_index_range(expression.bracket, target, normalized_index)
+            return target[normalized_index]
 
         if isinstance(expression, UnaryExpr):
             right = self.evaluate(expression.right)
@@ -269,6 +295,9 @@ class Interpreter:
             return "nil"
         if isinstance(value, bool):
             return "true" if value else "false"
+        if isinstance(value, list):
+            elements = [Interpreter.stringify(element) for element in value]
+            return "[" + ", ".join(elements) + "]"
         if isinstance(value, float) and value.is_integer():
             return str(int(value))
         return str(value)
@@ -286,6 +315,20 @@ class Interpreter:
         if self.are_numbers(left, right):
             return
         self.raise_runtime_error(operator, "操作数必须是数字")
+
+    def normalize_list_index(self, operator: Token, index: Any) -> int:
+        if isinstance(index, bool) or not isinstance(index, int):
+            self.raise_runtime_error(operator, "列表索引必须是数字")
+        return index
+
+    def check_list_index_range(
+        self,
+        operator: Token,
+        target: list[Any],
+        index: int,
+    ) -> None:
+        if index < 0 or index >= len(target):
+            self.raise_runtime_error(operator, "列表索引越界")
 
     @staticmethod
     def raise_runtime_error(operator: Token, message: str) -> None:

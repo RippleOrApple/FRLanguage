@@ -156,6 +156,18 @@ false
 answer
 ```
 
+List 字面量：
+
+```fr
+[1, 2, 3]
+```
+
+索引读取：
+
+```fr
+items[0]
+```
+
 括号表达式：
 
 ```fr
@@ -181,6 +193,12 @@ answer == 42
 
 ```fr
 answer = answer + 1
+```
+
+索引赋值：
+
+```fr
+items[1] = 42
 ```
 
 函数调用：
@@ -230,7 +248,10 @@ print(1 + 2 * 3);
 
 - `LiteralExpr`
 - `VariableExpr`
+- `ListExpr`
+- `IndexExpr`
 - `AssignExpr`
+- `IndexAssignExpr`
 - `GroupingExpr`
 - `UnaryExpr`
 - `AwaitExpr`

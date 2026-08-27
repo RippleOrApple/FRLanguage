@@ -215,6 +215,41 @@ class InterpreterTest(unittest.TestCase):
 
         self.assertEqual(interpreter.output, ["before", "future", "42"])
 
+    def test_prints_list_literal(self) -> None:
+        interpreter = self.run_source("print([1, 2, 3]);")
+
+        self.assertEqual(interpreter.output, ["[1, 2, 3]"])
+
+    def test_reads_list_index(self) -> None:
+        interpreter = self.run_source(
+            """
+            let items = ["first", "second", "third"];
+            print(items[1]);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["second"])
+
+    def test_assigns_list_index(self) -> None:
+        interpreter = self.run_source(
+            """
+            let items = [1, 2, 3];
+            items[1] = 42;
+            print(items[1]);
+            print(items);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["42", "[1, 42, 3]"])
+
+    def test_list_index_must_be_number(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "列表索引必须是数字"):
+            self.run_source('print([1, 2]["bad"]);')
+
+    def test_list_index_out_of_range_raises_runtime_error(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "列表索引越界"):
+            self.run_source("print([1, 2][2]);")
+
 
 if __name__ == "__main__":
     unittest.main()

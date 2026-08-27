@@ -29,10 +29,36 @@ class VariableExpr(Expr):
 
 
 @dataclass(frozen=True)
+class ListExpr(Expr):
+    """列表字面量表达式。"""
+
+    elements: list[Expr]
+
+
+@dataclass(frozen=True)
+class IndexExpr(Expr):
+    """索引读取表达式。"""
+
+    target: Expr
+    bracket: Token
+    index: Expr
+
+
+@dataclass(frozen=True)
 class AssignExpr(Expr):
     """变量赋值表达式。"""
 
     name: Token
+    value: Expr
+
+
+@dataclass(frozen=True)
+class IndexAssignExpr(Expr):
+    """索引赋值表达式。"""
+
+    target: Expr
+    bracket: Token
+    index: Expr
     value: Expr
 
 

@@ -53,6 +53,16 @@ count = count + 1;
 print(count);
 ```
 
+## List
+
+```fr
+let items = [1, 2, 3];
+print(items[0]);
+
+items[1] = 42;
+print(items);
+```
+
 ## 函数
 
 ```fr

@@ -12,6 +12,9 @@ from .ast import (
     FutureExpr,
     GroupingExpr,
     IfStmt,
+    IndexAssignExpr,
+    IndexExpr,
+    ListExpr,
     LiteralExpr,
     PrintStmt,
     Program,
@@ -153,6 +156,14 @@ class Parser:
             if isinstance(expr, VariableExpr):
                 return AssignExpr(name=expr.name, value=value)
 
+            if isinstance(expr, IndexExpr):
+                return IndexAssignExpr(
+                    target=expr.target,
+                    bracket=expr.bracket,
+                    index=expr.index,
+                    value=value,
+                )
+
             raise ParserError(
                 f"第 {equals.line} 行，第 {equals.column} 列：无效的赋值目标"
             )
@@ -223,6 +234,8 @@ class Parser:
         while True:
             if self.match(TokenType.LEFT_PAREN):
                 expr = self.finish_call(expr)
+            elif self.match(TokenType.LEFT_BRACKET):
+                expr = self.finish_index(expr)
             else:
                 break
 
@@ -239,6 +252,12 @@ class Parser:
         paren = self.consume(TokenType.RIGHT_PAREN, "函数调用参数后需要 ')'")
         return CallExpr(callee=callee, paren=paren, arguments=arguments)
 
+    def finish_index(self, target: Expr) -> Expr:
+        bracket = self.previous()
+        index = self.expression()
+        self.consume(TokenType.RIGHT_BRACKET, "索引表达式缺少 ']'")
+        return IndexExpr(target=target, bracket=bracket, index=index)
+
     def primary(self) -> Expr:
         if self.match(TokenType.FALSE):
             return LiteralExpr(False)
@@ -252,6 +271,8 @@ class Parser:
             keyword = self.previous()
             self.consume(TokenType.LEFT_BRACE, "future 后需要 '{'")
             return FutureExpr(keyword=keyword, body=self.block())
+        if self.match(TokenType.LEFT_BRACKET):
+            return self.list_literal()
         if self.match(TokenType.LEFT_PAREN):
             expr = self.expression()
             self.consume(TokenType.RIGHT_PAREN, "括号表达式缺少 ')'")
@@ -261,6 +282,17 @@ class Parser:
         raise ParserError(
             f"第 {token.line} 行，第 {token.column} 列：需要表达式"
         )
+
+    def list_literal(self) -> Expr:
+        elements: list[Expr] = []
+        if not self.check(TokenType.RIGHT_BRACKET):
+            while True:
+                elements.append(self.expression())
+                if not self.match(TokenType.COMMA):
+                    break
+
+        self.consume(TokenType.RIGHT_BRACKET, "列表字面量缺少 ']'")
+        return ListExpr(elements)
 
     def match(self, *types: TokenType) -> bool:
         for token_type in types:
