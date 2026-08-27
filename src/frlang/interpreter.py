@@ -9,6 +9,7 @@ from .ast import (
     AwaitExpr,
     BinaryExpr,
     BlockStmt,
+    BreakStmt,
     CallExpr,
     Expr,
     ExprStmt,
@@ -44,6 +45,13 @@ class ReturnSignal(Exception):
         self.value = value
 
 
+class BreakSignal(Exception):
+    """break 使用的内部控制流信号。"""
+
+    def __init__(self, keyword: Token) -> None:
+        self.keyword = keyword
+
+
 @dataclass(frozen=True)
 class MapKey:
     """Map 运行时使用的内部 key，避免 true 和 1 在 Python dict 中混淆。"""
@@ -73,6 +81,8 @@ class FRFunction:
             interpreter.execute_block(self.declaration.body, environment)
         except ReturnSignal as signal:
             return signal.value
+        except BreakSignal as signal:
+            interpreter.raise_runtime_error(signal.keyword, "break 只能用于 while 循环")
 
         return None
 
@@ -125,7 +135,10 @@ class Interpreter:
     def interpret(self, program: Program) -> None:
         """执行程序。"""
         for statement in program.statements:
-            self.execute(statement)
+            try:
+                self.execute(statement)
+            except BreakSignal as signal:
+                self.raise_runtime_error(signal.keyword, "break 只能用于 while 循环")
 
     def execute(self, statement: Stmt) -> None:
         if isinstance(statement, VarStmt):
@@ -155,8 +168,14 @@ class Interpreter:
 
         if isinstance(statement, WhileStmt):
             while self.is_truthy(self.evaluate(statement.condition)):
-                self.execute(statement.body)
+                try:
+                    self.execute(statement.body)
+                except BreakSignal:
+                    break
             return
+
+        if isinstance(statement, BreakStmt):
+            raise BreakSignal(statement.keyword)
 
         if isinstance(statement, IfStmt):
             if self.is_truthy(self.evaluate(statement.condition)):
@@ -248,6 +267,12 @@ class Interpreter:
                     self.execute_block(expression.body, Environment(closure))
                 except ReturnSignal as signal:
                     future.resolve(signal.value)
+                except BreakSignal as signal:
+                    future.reject(
+                        FRRuntimeError(
+                            f"第 {signal.keyword.line} 行，第 {signal.keyword.column} 列：break 只能用于 while 循环"
+                        )
+                    )
                 except FRRuntimeError as error:
                     future.reject(error)
                 else:
@@ -297,8 +322,19 @@ class Interpreter:
 
         if isinstance(expression, BinaryExpr):
             left = self.evaluate(expression.left)
-            right = self.evaluate(expression.right)
             operator_type = expression.operator.type
+
+            if operator_type is TokenType.OR:
+                if self.is_truthy(left):
+                    return left
+                return self.evaluate(expression.right)
+
+            if operator_type is TokenType.AND:
+                if not self.is_truthy(left):
+                    return left
+                return self.evaluate(expression.right)
+
+            right = self.evaluate(expression.right)
 
             if operator_type is TokenType.PLUS:
                 if self.are_numbers(left, right) or (

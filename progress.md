@@ -22,3 +22,13 @@
   - `python -m compileall src tests`：通过。
   - `$env:PYTHONPATH='src'; python -m frlang.main examples/builtins.fr`：通过。
   - `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_demo.fr`：通过。
+- 继续推进自举准备：为 `and`、`or`、`break` 写 Lexer 和解释器测试。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_lexer` 和 `$env:PYTHONPATH='src'; python -m unittest tests.test_interpreter`，新增测试按预期失败：关键字尚未识别，`break` 被当作普通变量，`and/or` 尚未进入表达式语法。
+- 实现 `and` / `or` 关键字、表达式优先级和短路求值。
+- 实现 `break` 语句，使用内部 `BreakSignal` 跳出当前 `while`，并禁止在循环外或穿过函数边界使用。
+- 使用 `and/or/break` 简化 `examples/fr_lexer_demo.fr`。
+- 更新 README、Lexer、Parser、Interpreter、语言草案、路线图和自举准备笔记。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：62 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_demo.fr`：输出 Token 列表。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/builtins.fr`：通过。

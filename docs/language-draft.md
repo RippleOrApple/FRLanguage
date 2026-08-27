@@ -45,6 +45,26 @@ while i < 3 {
 }
 ```
 
+跳出循环：
+
+```fr
+while true {
+  break;
+}
+```
+
+逻辑运算：
+
+```fr
+if count > 0 and count < 10 {
+  print("small");
+}
+
+if count == 0 or count == 10 {
+  print("edge");
+}
+```
+
 ## 赋值
 
 ```fr

@@ -34,8 +34,9 @@ FRLanguage 是一个使用 Python 编写的教学型小语言项目。目标不�
 - 类型和转换：`type(value)`、`str(value)`、`number(value)`
 - List 修改：`push(list, value)`、`pop(list)`
 - 文件读取：`readFile("相对路径")`
+- 逻辑运算：`and`、`or`
 - 条件分支：`if 条件 { ... } else { ... }`
-- 循环：`while 条件 { ... }`
+- 循环：`while 条件 { ... }`、`break;`
 - 代码块作用域：`{ ... }`
 - 函数：`fn add(a, b) { return a + b; }`
 - 函数调用：`add(1, 2)`

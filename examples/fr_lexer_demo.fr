@@ -56,44 +56,28 @@ fn scan(source) {
         } else {
           if isDigit(ch) {
             let start = current;
-            let scanning = true;
-            while scanning {
-              if current < len(source) {
-                let digit = charAt(source, current);
-                if isDigit(digit) {
-                  current = current + 1;
-                } else {
-                  scanning = false;
-                }
+            while current < len(source) {
+              let digit = charAt(source, current);
+              if isDigit(digit) {
+                current = current + 1;
               } else {
-                scanning = false;
+                break;
               }
             }
             addToken(tokens, "NUMBER", substring(source, start, current));
           } else {
             let start = current;
-            let scanning = true;
-            while scanning {
-              if current < len(source) {
-                let part = charAt(source, current);
-                if part == " " {
-                  scanning = false;
-                } else {
-                  if part == "=" {
-                    scanning = false;
-                  } else {
-                    if part == ";" {
-                      scanning = false;
-                    } else {
-                      current = current + 1;
-                    }
-                  }
-                }
+            while current < len(source) {
+              let part = charAt(source, current);
+              if part == " " or part == "=" or part == ";" {
+                break;
               } else {
-                scanning = false;
+                current = current + 1;
               }
             }
-            addToken(tokens, "IDENT", substring(source, start, current));
+            if start < current {
+              addToken(tokens, "IDENT", substring(source, start, current));
+            }
           }
         }
       }

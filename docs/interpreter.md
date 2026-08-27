@@ -54,6 +54,14 @@ while i < 3 {
 }
 ```
 
+break 跳出循环：
+
+```fr
+while true {
+  break;
+}
+```
+
 if 条件分支：
 
 ```fr
@@ -176,7 +184,11 @@ await later()
 9 / 3
 3 > 2
 3 == 3
+true or missing
+false and missing
 ```
+
+`and` 和 `or` 会短路求值：如果左侧已经决定结果，右侧不会执行。
 
 ## 变量环境
 
@@ -320,6 +332,8 @@ print(true);
 - 没有 `return` 时返回 `nil`
 
 函数可以读取声明位置外层环境中的变量，因此递归调用可以工作。
+
+`break` 只能跳出当前执行中的 `while` 循环，不能在循环外使用，也不能穿过函数边界。
 
 ## Future 和 Runtime 模型
 

@@ -5,6 +5,7 @@ from .ast import (
     AwaitExpr,
     BinaryExpr,
     BlockStmt,
+    BreakStmt,
     CallExpr,
     Expr,
     ExprStmt,
@@ -85,6 +86,8 @@ class Parser:
             return self.print_statement()
         if self.match(TokenType.RETURN):
             return self.return_statement()
+        if self.match(TokenType.BREAK):
+            return self.break_statement()
         if self.match(TokenType.IF):
             return self.if_statement()
         if self.match(TokenType.WHILE):
@@ -118,6 +121,11 @@ class Parser:
         self.consume(TokenType.SEMICOLON, "return 语句末尾需要 ';'")
         return ReturnStmt(keyword=keyword, value=value)
 
+    def break_statement(self) -> Stmt:
+        keyword = self.previous()
+        self.consume(TokenType.SEMICOLON, "break 语句末尾需要 ';'")
+        return BreakStmt(keyword=keyword)
+
     def while_statement(self) -> Stmt:
         condition = self.expression()
         self.consume(TokenType.LEFT_BRACE, "while 条件后需要 '{'")
@@ -149,7 +157,7 @@ class Parser:
         return self.assignment()
 
     def assignment(self) -> Expr:
-        expr = self.equality()
+        expr = self.or_()
 
         if self.match(TokenType.EQUAL):
             equals = self.previous()
@@ -169,6 +177,26 @@ class Parser:
             raise ParserError(
                 f"第 {equals.line} 行，第 {equals.column} 列：无效的赋值目标"
             )
+
+        return expr
+
+    def or_(self) -> Expr:
+        expr = self.and_()
+
+        while self.match(TokenType.OR):
+            operator = self.previous()
+            right = self.and_()
+            expr = BinaryExpr(left=expr, operator=operator, right=right)
+
+        return expr
+
+    def and_(self) -> Expr:
+        expr = self.equality()
+
+        while self.match(TokenType.AND):
+            operator = self.previous()
+            right = self.equality()
+            expr = BinaryExpr(left=expr, operator=operator, right=right)
 
         return expr
 

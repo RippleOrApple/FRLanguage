@@ -56,6 +56,9 @@ Lexer 负责把源码字符串转换成 Token 列表。它不理解语法结构�
 - `if`
 - `else`
 - `while`
+- `break`
+- `and`
+- `or`
 - `true`
 - `false`
 - `future`

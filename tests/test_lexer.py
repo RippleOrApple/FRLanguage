@@ -105,6 +105,17 @@ class LexerTest(unittest.TestCase):
             ],
         )
 
+    def test_scans_logic_and_break_keywords(self) -> None:
+        self.assertEqual(
+            self.token_types("and or break"),
+            [
+                TokenType.AND,
+                TokenType.OR,
+                TokenType.BREAK,
+                TokenType.EOF,
+            ],
+        )
+
     def test_ignores_line_comments(self) -> None:
         tokens = self.token_types("let x = 1; // ignore this\nprint(x);")
 

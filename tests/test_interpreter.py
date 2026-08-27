@@ -84,6 +84,41 @@ class InterpreterTest(unittest.TestCase):
 
         self.assertEqual(interpreter.output, ["0", "1", "2"])
 
+    def test_break_exits_nearest_while_loop(self) -> None:
+        interpreter = self.run_source(
+            """
+            let i = 0;
+            while i < 5 {
+              if i == 3 {
+                break;
+              }
+              print(i);
+              i = i + 1;
+            }
+            print("done");
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["0", "1", "2", "done"])
+
+    def test_break_outside_while_raises_runtime_error(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "break 只能用于 while 循环"):
+            self.run_source("break;")
+
+    def test_break_cannot_escape_function_boundary(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "break 只能用于 while 循环"):
+            self.run_source(
+                """
+                fn stop() {
+                  break;
+                }
+
+                while true {
+                  stop();
+                }
+                """
+            )
+
     def test_runs_if_then_branch(self) -> None:
         interpreter = self.run_source(
             """
@@ -123,6 +158,18 @@ class InterpreterTest(unittest.TestCase):
         )
 
         self.assertEqual(interpreter.output, ["done"])
+
+    def test_runs_logical_and_or_with_short_circuit(self) -> None:
+        interpreter = self.run_source(
+            """
+            print(true or missing);
+            print(false and missing);
+            print(false or "fallback");
+            print("value" and 123);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["true", "false", "fallback", "123"])
 
     def test_calls_function_with_return_value(self) -> None:
         interpreter = self.run_source(

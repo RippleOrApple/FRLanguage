@@ -52,6 +52,14 @@ while i < 3 {
 }
 ```
 
+break 语句：
+
+```fr
+while true {
+  break;
+}
+```
+
 if 条件分支：
 
 ```fr
@@ -194,6 +202,8 @@ user["name"]
 1 + 2
 3 * 4
 answer == 42
+ready and count > 0
+name == "FR" or name == "fr"
 ```
 
 赋值表达式：
@@ -229,6 +239,8 @@ await future {
 
 ```txt
 =
+or
+and
 == !=
 > >= < <=
 + -
@@ -275,6 +287,7 @@ print(1 + 2 * 3);
 - `ExprStmt`
 - `BlockStmt`
 - `WhileStmt`
+- `BreakStmt`
 - `IfStmt`
 - `FunctionStmt`
 - `ReturnStmt`

@@ -164,6 +164,13 @@ class WhileStmt(Stmt):
 
 
 @dataclass(frozen=True)
+class BreakStmt(Stmt):
+    """跳出循环语句。"""
+
+    keyword: Token
+
+
+@dataclass(frozen=True)
 class IfStmt(Stmt):
     """if 条件分支语句。"""
 
