@@ -1,12 +1,15 @@
 """解释器核心。"""
 
-from typing import Any
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Callable
 
 from .ast import (
     AssignExpr,
     AwaitExpr,
     BinaryExpr,
     BlockStmt,
+    BreakStmt,
     CallExpr,
     Expr,
     ExprStmt,
@@ -14,7 +17,11 @@ from .ast import (
     FutureExpr,
     GroupingExpr,
     IfStmt,
+    IndexAssignExpr,
+    IndexExpr,
+    ListExpr,
     LiteralExpr,
+    MapExpr,
     PrintStmt,
     Program,
     ReturnStmt,
@@ -38,6 +45,21 @@ class ReturnSignal(Exception):
         self.value = value
 
 
+class BreakSignal(Exception):
+    """break 使用的内部控制流信号。"""
+
+    def __init__(self, keyword: Token) -> None:
+        self.keyword = keyword
+
+
+@dataclass(frozen=True)
+class MapKey:
+    """Map 运行时使用的内部 key，避免 true 和 1 在 Python dict 中混淆。"""
+
+    kind: str
+    value: Any
+
+
 class FRFunction:
     """FRLanguage 函数对象。"""
 
@@ -45,7 +67,12 @@ class FRFunction:
         self.declaration = declaration
         self.closure = closure
 
-    def call(self, interpreter: "Interpreter", arguments: list[Any]) -> Any:
+    def call(
+        self,
+        interpreter: "Interpreter",
+        arguments: list[Any],
+        call_token: Token,
+    ) -> Any:
         environment = Environment(self.closure)
         for param, argument in zip(self.declaration.params, arguments):
             environment.define(param.lexeme, argument)
@@ -54,6 +81,8 @@ class FRFunction:
             interpreter.execute_block(self.declaration.body, environment)
         except ReturnSignal as signal:
             return signal.value
+        except BreakSignal as signal:
+            interpreter.raise_runtime_error(signal.keyword, "break 只能用于 while 循环")
 
         return None
 
@@ -64,19 +93,52 @@ class FRFunction:
         return f"<fn {self.declaration.name.lexeme}>"
 
 
+class FRNativeFunction:
+    """由 Python 实现、暴露给 FRLanguage 的原生函数。"""
+
+    def __init__(
+        self,
+        name: str,
+        arity: int,
+        function: Callable[["Interpreter", list[Any], Token], Any],
+    ) -> None:
+        self.name = name
+        self._arity = arity
+        self.function = function
+
+    def call(
+        self,
+        interpreter: "Interpreter",
+        arguments: list[Any],
+        call_token: Token,
+    ) -> Any:
+        return self.function(interpreter, arguments, call_token)
+
+    def arity(self) -> int:
+        return self._arity
+
+    def __str__(self) -> str:
+        return f"<native fn {self.name}>"
+
+
 class Interpreter:
     """执行 FRLanguage AST。"""
 
-    def __init__(self) -> None:
+    def __init__(self, base_path: Path | str | None = None) -> None:
         self.globals = Environment()
         self.environment = self.globals
         self.runtime = Runtime()
         self.output: list[str] = []
+        self.base_path = Path.cwd() if base_path is None else Path(base_path)
+        self.define_native_functions()
 
     def interpret(self, program: Program) -> None:
         """执行程序。"""
         for statement in program.statements:
-            self.execute(statement)
+            try:
+                self.execute(statement)
+            except BreakSignal as signal:
+                self.raise_runtime_error(signal.keyword, "break 只能用于 while 循环")
 
     def execute(self, statement: Stmt) -> None:
         if isinstance(statement, VarStmt):
@@ -106,8 +168,14 @@ class Interpreter:
 
         if isinstance(statement, WhileStmt):
             while self.is_truthy(self.evaluate(statement.condition)):
-                self.execute(statement.body)
+                try:
+                    self.execute(statement.body)
+                except BreakSignal:
+                    break
             return
+
+        if isinstance(statement, BreakStmt):
+            raise BreakSignal(statement.keyword)
 
         if isinstance(statement, IfStmt):
             if self.is_truthy(self.evaluate(statement.condition)):
@@ -137,12 +205,39 @@ class Interpreter:
         if isinstance(expression, LiteralExpr):
             return expression.value
 
+        if isinstance(expression, ListExpr):
+            return [self.evaluate(element) for element in expression.elements]
+
+        if isinstance(expression, MapExpr):
+            values: dict[Any, Any] = {}
+            for entry in expression.entries:
+                key = self.evaluate(entry.key)
+                normalized_key = self.normalize_map_key(expression=entry.key, key=key)
+                values[normalized_key] = self.evaluate(entry.value)
+            return values
+
         if isinstance(expression, VariableExpr):
             return self.environment.get(expression.name)
 
         if isinstance(expression, AssignExpr):
             value = self.evaluate(expression.value)
             self.environment.assign(expression.name, value)
+            return value
+
+        if isinstance(expression, IndexAssignExpr):
+            target = self.evaluate(expression.target)
+            index = self.evaluate(expression.index)
+            value = self.evaluate(expression.value)
+            if isinstance(target, list):
+                normalized_index = self.normalize_list_index(expression.bracket, index)
+                self.check_list_index_range(expression.bracket, target, normalized_index)
+                target[normalized_index] = value
+                return value
+            if isinstance(target, dict):
+                normalized_key = self.normalize_map_key_token(expression.bracket, index)
+                target[normalized_key] = value
+                return value
+            self.raise_runtime_error(expression.bracket, "只能给 List 或 Map 索引赋值")
             return value
 
         if isinstance(expression, GroupingExpr):
@@ -152,7 +247,7 @@ class Interpreter:
             callee = self.evaluate(expression.callee)
             arguments = [self.evaluate(argument) for argument in expression.arguments]
 
-            if not isinstance(callee, FRFunction):
+            if not isinstance(callee, (FRFunction, FRNativeFunction)):
                 self.raise_runtime_error(expression.paren, "只能调用函数")
 
             if len(arguments) != callee.arity():
@@ -161,7 +256,7 @@ class Interpreter:
                     f"参数数量不匹配：需要 {callee.arity()} 个，实际 {len(arguments)} 个",
                 )
 
-            return callee.call(self, arguments)
+            return callee.call(self, arguments, expression.paren)
 
         if isinstance(expression, FutureExpr):
             future = Future()
@@ -172,6 +267,12 @@ class Interpreter:
                     self.execute_block(expression.body, Environment(closure))
                 except ReturnSignal as signal:
                     future.resolve(signal.value)
+                except BreakSignal as signal:
+                    future.reject(
+                        FRRuntimeError(
+                            f"第 {signal.keyword.line} 行，第 {signal.keyword.column} 列：break 只能用于 while 循环"
+                        )
+                    )
                 except FRRuntimeError as error:
                     future.reject(error)
                 else:
@@ -197,6 +298,20 @@ class Interpreter:
 
             self.raise_runtime_error(expression.keyword, "Future 尚未完成")
 
+        if isinstance(expression, IndexExpr):
+            target = self.evaluate(expression.target)
+            index = self.evaluate(expression.index)
+            if isinstance(target, list):
+                normalized_index = self.normalize_list_index(expression.bracket, index)
+                self.check_list_index_range(expression.bracket, target, normalized_index)
+                return target[normalized_index]
+            if isinstance(target, dict):
+                normalized_key = self.normalize_map_key_token(expression.bracket, index)
+                if normalized_key not in target:
+                    self.raise_runtime_error(expression.bracket, "Map key 不存在")
+                return target[normalized_key]
+            self.raise_runtime_error(expression.bracket, "只能读取 List 或 Map 索引")
+
         if isinstance(expression, UnaryExpr):
             right = self.evaluate(expression.right)
             if expression.operator.type is TokenType.MINUS:
@@ -207,8 +322,19 @@ class Interpreter:
 
         if isinstance(expression, BinaryExpr):
             left = self.evaluate(expression.left)
-            right = self.evaluate(expression.right)
             operator_type = expression.operator.type
+
+            if operator_type is TokenType.OR:
+                if self.is_truthy(left):
+                    return left
+                return self.evaluate(expression.right)
+
+            if operator_type is TokenType.AND:
+                if not self.is_truthy(left):
+                    return left
+                return self.evaluate(expression.right)
+
+            right = self.evaluate(expression.right)
 
             if operator_type is TokenType.PLUS:
                 if self.are_numbers(left, right) or (
@@ -263,15 +389,188 @@ class Interpreter:
             return value
         return True
 
+    def define_native_functions(self) -> None:
+        natives = [
+            FRNativeFunction("len", 1, Interpreter.native_len),
+            FRNativeFunction("charAt", 2, Interpreter.native_char_at),
+            FRNativeFunction("substring", 3, Interpreter.native_substring),
+            FRNativeFunction("type", 1, Interpreter.native_type),
+            FRNativeFunction("str", 1, Interpreter.native_str),
+            FRNativeFunction("number", 1, Interpreter.native_number),
+            FRNativeFunction("push", 2, Interpreter.native_push),
+            FRNativeFunction("pop", 1, Interpreter.native_pop),
+            FRNativeFunction("readFile", 1, Interpreter.native_read_file),
+        ]
+        for native in natives:
+            self.globals.define(native.name, native)
+
+    @staticmethod
+    def native_len(interpreter: "Interpreter", arguments: list[Any], token: Token) -> int:
+        value = arguments[0]
+        if isinstance(value, (str, list, dict)):
+            return len(value)
+        interpreter.raise_runtime_error(token, "len 参数必须是字符串、List 或 Map")
+
+    @staticmethod
+    def native_char_at(
+        interpreter: "Interpreter",
+        arguments: list[Any],
+        token: Token,
+    ) -> str:
+        text = arguments[0]
+        index = arguments[1]
+        if not isinstance(text, str):
+            interpreter.raise_runtime_error(token, "charAt 第 1 个参数必须是字符串")
+        if isinstance(index, bool) or not isinstance(index, int):
+            interpreter.raise_runtime_error(token, "charAt 第 2 个参数必须是整数")
+        if index < 0 or index >= len(text):
+            interpreter.raise_runtime_error(token, "charAt 索引越界")
+        return text[index]
+
+    @staticmethod
+    def native_substring(
+        interpreter: "Interpreter",
+        arguments: list[Any],
+        token: Token,
+    ) -> str:
+        text = arguments[0]
+        start = arguments[1]
+        end = arguments[2]
+        if not isinstance(text, str):
+            interpreter.raise_runtime_error(token, "substring 第 1 个参数必须是字符串")
+        if isinstance(start, bool) or not isinstance(start, int):
+            interpreter.raise_runtime_error(token, "substring 第 2 个参数必须是整数")
+        if isinstance(end, bool) or not isinstance(end, int):
+            interpreter.raise_runtime_error(token, "substring 第 3 个参数必须是整数")
+        if start < 0 or end < start or end > len(text):
+            interpreter.raise_runtime_error(token, "substring 范围越界")
+        return text[start:end]
+
+    @staticmethod
+    def native_type(
+        interpreter: "Interpreter",
+        arguments: list[Any],
+        token: Token,
+    ) -> str:
+        value = arguments[0]
+        if value is None:
+            return "nil"
+        if isinstance(value, bool):
+            return "bool"
+        if isinstance(value, (int, float)):
+            return "number"
+        if isinstance(value, str):
+            return "string"
+        if isinstance(value, list):
+            return "list"
+        if isinstance(value, dict):
+            return "map"
+        if isinstance(value, (FRFunction, FRNativeFunction)):
+            return "function"
+        if isinstance(value, Future):
+            return "future"
+        return "unknown"
+
+    @staticmethod
+    def native_str(interpreter: "Interpreter", arguments: list[Any], token: Token) -> str:
+        return interpreter.stringify(arguments[0])
+
+    @staticmethod
+    def native_number(
+        interpreter: "Interpreter",
+        arguments: list[Any],
+        token: Token,
+    ) -> int | float:
+        value = arguments[0]
+        if isinstance(value, bool):
+            interpreter.raise_runtime_error(token, "number 参数必须是字符串或数字")
+        if isinstance(value, (int, float)):
+            return value
+        if not isinstance(value, str):
+            interpreter.raise_runtime_error(token, "number 参数必须是字符串或数字")
+
+        try:
+            number = float(value)
+        except ValueError:
+            interpreter.raise_runtime_error(token, "number 无法转换这个字符串")
+
+        if number.is_integer():
+            return int(number)
+        return number
+
+    @staticmethod
+    def native_push(interpreter: "Interpreter", arguments: list[Any], token: Token) -> int:
+        target = arguments[0]
+        if not isinstance(target, list):
+            interpreter.raise_runtime_error(token, "push 第 1 个参数必须是 List")
+        target.append(arguments[1])
+        return len(target)
+
+    @staticmethod
+    def native_pop(interpreter: "Interpreter", arguments: list[Any], token: Token) -> Any:
+        target = arguments[0]
+        if not isinstance(target, list):
+            interpreter.raise_runtime_error(token, "pop 参数必须是 List")
+        if len(target) == 0:
+            interpreter.raise_runtime_error(token, "pop 不能操作空 List")
+        return target.pop()
+
+    @staticmethod
+    def native_read_file(
+        interpreter: "Interpreter",
+        arguments: list[Any],
+        token: Token,
+    ) -> str:
+        path = arguments[0]
+        if not isinstance(path, str):
+            interpreter.raise_runtime_error(token, "readFile 参数必须是字符串")
+
+        requested_path = Path(path)
+        if requested_path.is_absolute():
+            interpreter.raise_runtime_error(token, "readFile 只支持相对路径")
+
+        base_path = interpreter.base_path.resolve()
+        target_path = (base_path / requested_path).resolve()
+        try:
+            target_path.relative_to(base_path)
+        except ValueError:
+            interpreter.raise_runtime_error(token, "readFile 不能读取工作目录外的文件")
+
+        try:
+            return target_path.read_text(encoding="utf-8")
+        except OSError as error:
+            interpreter.raise_runtime_error(token, f"readFile 读取失败：{error}")
+
     @staticmethod
     def stringify(value: Any) -> str:
         if value is None:
             return "nil"
         if isinstance(value, bool):
             return "true" if value else "false"
+        if isinstance(value, list):
+            elements = [Interpreter.stringify(element) for element in value]
+            return "[" + ", ".join(elements) + "]"
+        if isinstance(value, dict):
+            entries = [
+                f"{Interpreter.stringify_map_key(key)}: {Interpreter.stringify_map_part(item)}"
+                for key, item in value.items()
+            ]
+            return "{" + ", ".join(entries) + "}"
         if isinstance(value, float) and value.is_integer():
             return str(int(value))
         return str(value)
+
+    @staticmethod
+    def stringify_map_part(value: Any) -> str:
+        if isinstance(value, str):
+            return f'"{value}"'
+        return Interpreter.stringify(value)
+
+    @staticmethod
+    def stringify_map_key(value: Any) -> str:
+        if isinstance(value, MapKey):
+            return Interpreter.stringify_map_part(value.value)
+        return Interpreter.stringify_map_part(value)
 
     @staticmethod
     def are_numbers(left: Any, right: Any) -> bool:
@@ -286,6 +585,68 @@ class Interpreter:
         if self.are_numbers(left, right):
             return
         self.raise_runtime_error(operator, "操作数必须是数字")
+
+    def normalize_list_index(self, operator: Token, index: Any) -> int:
+        if isinstance(index, bool) or not isinstance(index, int):
+            self.raise_runtime_error(operator, "列表索引必须是数字")
+        return index
+
+    def check_list_index_range(
+        self,
+        operator: Token,
+        target: list[Any],
+        index: int,
+    ) -> None:
+        if index < 0 or index >= len(target):
+            self.raise_runtime_error(operator, "列表索引越界")
+
+    def normalize_map_key(self, expression: Expr, key: Any) -> MapKey:
+        normalized_key = self.build_map_key(key)
+        if normalized_key is not None:
+            return normalized_key
+        self.raise_expression_runtime_error(expression, "Map key 类型不支持")
+
+    def normalize_map_key_token(self, operator: Token, key: Any) -> MapKey:
+        normalized_key = self.build_map_key(key)
+        if normalized_key is not None:
+            return normalized_key
+        self.raise_runtime_error(operator, "Map key 类型不支持")
+
+    @staticmethod
+    def build_map_key(key: Any) -> MapKey | None:
+        if isinstance(key, bool):
+            return MapKey("bool", key)
+        if isinstance(key, str):
+            return MapKey("string", key)
+        if isinstance(key, (int, float)):
+            return MapKey("number", key)
+        return None
+
+    def raise_expression_runtime_error(self, expression: Expr, message: str) -> None:
+        token = self.token_for_expression(expression)
+        self.raise_runtime_error(token, message)
+
+    @staticmethod
+    def token_for_expression(expression: Expr) -> Token:
+        if isinstance(expression, VariableExpr):
+            return expression.name
+        if isinstance(expression, AssignExpr):
+            return expression.name
+        if isinstance(expression, IndexExpr):
+            return expression.bracket
+        if isinstance(expression, IndexAssignExpr):
+            return expression.bracket
+        if isinstance(expression, AwaitExpr):
+            return expression.keyword
+        if isinstance(expression, FutureExpr):
+            return expression.keyword
+        if isinstance(expression, CallExpr):
+            return expression.paren
+        if isinstance(expression, BinaryExpr):
+            return expression.operator
+        if isinstance(expression, UnaryExpr):
+            return expression.operator
+        return Token(TokenType.EOF, "", None, 1, 1)
 
     @staticmethod
     def raise_runtime_error(operator: Token, message: str) -> None:

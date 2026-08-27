@@ -1,4 +1,7 @@
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Any
 
 from frlang.errors import RuntimeError
 from frlang.ast import Program
@@ -8,10 +11,10 @@ from frlang.parser import Parser
 
 
 class InterpreterTest(unittest.TestCase):
-    def run_source(self, source: str) -> Interpreter:
+    def run_source(self, source: str, **interpreter_options: Any) -> Interpreter:
         tokens = Lexer(source).scan_tokens()
         program = Parser(tokens).parse()
-        interpreter = Interpreter()
+        interpreter = Interpreter(**interpreter_options)
         interpreter.interpret(program)
         return interpreter
 
@@ -81,6 +84,41 @@ class InterpreterTest(unittest.TestCase):
 
         self.assertEqual(interpreter.output, ["0", "1", "2"])
 
+    def test_break_exits_nearest_while_loop(self) -> None:
+        interpreter = self.run_source(
+            """
+            let i = 0;
+            while i < 5 {
+              if i == 3 {
+                break;
+              }
+              print(i);
+              i = i + 1;
+            }
+            print("done");
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["0", "1", "2", "done"])
+
+    def test_break_outside_while_raises_runtime_error(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "break 只能用于 while 循环"):
+            self.run_source("break;")
+
+    def test_break_cannot_escape_function_boundary(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "break 只能用于 while 循环"):
+            self.run_source(
+                """
+                fn stop() {
+                  break;
+                }
+
+                while true {
+                  stop();
+                }
+                """
+            )
+
     def test_runs_if_then_branch(self) -> None:
         interpreter = self.run_source(
             """
@@ -120,6 +158,18 @@ class InterpreterTest(unittest.TestCase):
         )
 
         self.assertEqual(interpreter.output, ["done"])
+
+    def test_runs_logical_and_or_with_short_circuit(self) -> None:
+        interpreter = self.run_source(
+            """
+            print(true or missing);
+            print(false and missing);
+            print(false or "fallback");
+            print("value" and 123);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["true", "false", "fallback", "123"])
 
     def test_calls_function_with_return_value(self) -> None:
         interpreter = self.run_source(
@@ -214,6 +264,172 @@ class InterpreterTest(unittest.TestCase):
         )
 
         self.assertEqual(interpreter.output, ["before", "future", "42"])
+
+    def test_prints_list_literal(self) -> None:
+        interpreter = self.run_source("print([1, 2, 3]);")
+
+        self.assertEqual(interpreter.output, ["[1, 2, 3]"])
+
+    def test_reads_list_index(self) -> None:
+        interpreter = self.run_source(
+            """
+            let items = ["first", "second", "third"];
+            print(items[1]);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["second"])
+
+    def test_assigns_list_index(self) -> None:
+        interpreter = self.run_source(
+            """
+            let items = [1, 2, 3];
+            items[1] = 42;
+            print(items[1]);
+            print(items);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["42", "[1, 42, 3]"])
+
+    def test_list_index_must_be_number(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "列表索引必须是数字"):
+            self.run_source('print([1, 2]["bad"]);')
+
+    def test_list_index_out_of_range_raises_runtime_error(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "列表索引越界"):
+            self.run_source("print([1, 2][2]);")
+
+    def test_prints_map_literal(self) -> None:
+        interpreter = self.run_source('print({"name": "FR", "version": 1});')
+
+        self.assertEqual(interpreter.output, ['{"name": "FR", "version": 1}'])
+
+    def test_reads_map_key(self) -> None:
+        interpreter = self.run_source(
+            """
+            let user = {"name": "FR", "version": 1};
+            print(user["name"]);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["FR"])
+
+    def test_assigns_map_key(self) -> None:
+        interpreter = self.run_source(
+            """
+            let user = {"name": "FR", "version": 1};
+            user["version"] = 2;
+            print(user);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ['{"name": "FR", "version": 2}'])
+
+    def test_map_keeps_boolean_and_number_keys_separate(self) -> None:
+        interpreter = self.run_source(
+            """
+            let values = {true: "yes", 1: "one"};
+            print(values[true]);
+            print(values[1]);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["yes", "one"])
+
+    def test_map_key_must_be_hashable_value(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "Map key 类型不支持"):
+            self.run_source('print({"name": "FR"}[[1]]);')
+
+    def test_missing_map_key_raises_runtime_error(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "Map key 不存在"):
+            self.run_source('print({"name": "FR"}["missing"]);')
+
+    def test_builtin_len_reads_string_list_and_map_size(self) -> None:
+        interpreter = self.run_source(
+            """
+            print(len("hello"));
+            print(len([1, 2, 3]));
+            print(len({"name": "FR", "version": 1}));
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["5", "3", "2"])
+
+    def test_builtin_string_helpers_read_text_parts(self) -> None:
+        interpreter = self.run_source(
+            """
+            print(charAt("hello", 1));
+            print(substring("hello", 1, 4));
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["e", "ell"])
+
+    def test_builtin_type_str_and_number_convert_values(self) -> None:
+        interpreter = self.run_source(
+            """
+            let missing;
+            print(type(123));
+            print(type("FR"));
+            print(type([1]));
+            print(type({"ok": true}));
+            print(type(missing));
+            print(str(42) + "!");
+            print(number("41") + 1);
+            """
+        )
+
+        self.assertEqual(
+            interpreter.output,
+            ["number", "string", "list", "map", "nil", "42!", "42"],
+        )
+
+    def test_builtin_push_and_pop_mutate_list(self) -> None:
+        interpreter = self.run_source(
+            """
+            let items = [1];
+            print(push(items, 2));
+            print(items);
+            print(pop(items));
+            print(items);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["2", "[1, 2]", "2", "[1]"])
+
+    def test_builtin_reports_argument_type_errors(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "len 参数必须是字符串、List 或 Map"):
+            self.run_source("print(len(1));")
+
+        with self.assertRaisesRegex(RuntimeError, "charAt 第 2 个参数必须是整数"):
+            self.run_source('print(charAt("hello", "1"));')
+
+        with self.assertRaisesRegex(RuntimeError, "number 无法转换这个字符串"):
+            self.run_source('print(number("abc"));')
+
+    def test_builtin_read_file_reads_relative_text_file(self) -> None:
+        with TemporaryDirectory() as directory:
+            base_path = Path(directory)
+            (base_path / "data.txt").write_text("hello\nFR", encoding="utf-8")
+            interpreter = self.run_source(
+                'print(readFile("data.txt"));',
+                base_path=base_path,
+            )
+
+        self.assertEqual(interpreter.output, ["hello\nFR"])
+
+    def test_builtin_read_file_rejects_unsafe_paths(self) -> None:
+        with TemporaryDirectory() as directory:
+            base_path = Path(directory)
+            with self.assertRaisesRegex(RuntimeError, "readFile 只支持相对路径"):
+                self.run_source(
+                    f'print(readFile("{base_path.resolve()}"));',
+                    base_path=base_path,
+                )
+
+            with self.assertRaisesRegex(RuntimeError, "readFile 不能读取工作目录外的文件"):
+                self.run_source('print(readFile("../outside.txt"));', base_path=base_path)
 
 
 if __name__ == "__main__":

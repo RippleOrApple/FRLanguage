@@ -79,6 +79,43 @@ class LexerTest(unittest.TestCase):
         self.assertEqual(tokens[8].literal, 12.5)
         self.assertEqual(tokens[10].literal, 2)
 
+    def test_scans_list_brackets(self) -> None:
+        self.assertEqual(
+            self.token_types("[1, 2]"),
+            [
+                TokenType.LEFT_BRACKET,
+                TokenType.NUMBER,
+                TokenType.COMMA,
+                TokenType.NUMBER,
+                TokenType.RIGHT_BRACKET,
+                TokenType.EOF,
+            ],
+        )
+
+    def test_scans_map_colon(self) -> None:
+        self.assertEqual(
+            self.token_types('{"name": "FR"}'),
+            [
+                TokenType.LEFT_BRACE,
+                TokenType.STRING,
+                TokenType.COLON,
+                TokenType.STRING,
+                TokenType.RIGHT_BRACE,
+                TokenType.EOF,
+            ],
+        )
+
+    def test_scans_logic_and_break_keywords(self) -> None:
+        self.assertEqual(
+            self.token_types("and or break"),
+            [
+                TokenType.AND,
+                TokenType.OR,
+                TokenType.BREAK,
+                TokenType.EOF,
+            ],
+        )
+
     def test_ignores_line_comments(self) -> None:
         tokens = self.token_types("let x = 1; // ignore this\nprint(x);")
 

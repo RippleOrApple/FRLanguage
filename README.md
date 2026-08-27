@@ -19,6 +19,7 @@ FRLanguage 是一个使用 Python 编写的教学型小语言项目。目标不�
 - [语法分析器说明](docs/parser.md)
 - [解释器说明](docs/interpreter.md)
 - [Future 和 await 说明](docs/future.md)
+- [自举准备笔记](docs/self-hosting-notes.md)
 
 ## 当前支持的语法
 
@@ -26,8 +27,16 @@ FRLanguage 是一个使用 Python 编写的教学型小语言项目。目标不�
 - 赋值：`x = x + 1;`
 - 输出：`print(x);`
 - 表达式：数字、字符串、布尔值、变量、括号、一元运算、二元运算
+- List：`[1, 2, 3]`
+- 索引读取和赋值：`items[0]`、`items[1] = 42`
+- Map：`{"name": "FR"}`
+- 内置函数：`len(value)`、`charAt(text, index)`、`substring(text, start, end)`
+- 类型和转换：`type(value)`、`str(value)`、`number(value)`
+- List 修改：`push(list, value)`、`pop(list)`
+- 文件读取：`readFile("相对路径")`
+- 逻辑运算：`and`、`or`
 - 条件分支：`if 条件 { ... } else { ... }`
-- 循环：`while 条件 { ... }`
+- 循环：`while 条件 { ... }`、`break;`
 - 代码块作用域：`{ ... }`
 - 函数：`fn add(a, b) { return a + b; }`
 - 函数调用：`add(1, 2)`
@@ -48,6 +57,10 @@ $env:PYTHONPATH='src'; python -m frlang.main examples/hello.fr
 ```bash
 $env:PYTHONPATH='src'; python -m frlang.main examples/while.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/if.fr
+$env:PYTHONPATH='src'; python -m frlang.main examples/list.fr
+$env:PYTHONPATH='src'; python -m frlang.main examples/map.fr
+$env:PYTHONPATH='src'; python -m frlang.main examples/builtins.fr
+$env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_demo.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/function.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/recursion.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/future.fr
@@ -88,6 +101,7 @@ print(missing);
 
 ## 后续方向
 
+- 增加模块系统
 - 清理类型注解，减少编辑器类型检查红线
 - 增加更多错误测试
 - 做 REPL 交互式命令行

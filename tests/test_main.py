@@ -19,6 +19,19 @@ class MainTest(unittest.TestCase):
 
         self.assertEqual(stdout.getvalue(), "7\n")
 
+    def test_main_resolves_read_file_from_source_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source_path = Path(directory) / "program.fr"
+            data_path = Path(directory) / "data.txt"
+            data_path.write_text("from sibling file", encoding="utf-8")
+            source_path.write_text('print(readFile("data.txt"));\n', encoding="utf-8")
+
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                main([str(source_path)])
+
+        self.assertEqual(stdout.getvalue(), "from sibling file\n")
+
     def test_main_reports_language_error_without_traceback(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             source_path = Path(directory) / "program.fr"

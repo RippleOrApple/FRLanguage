@@ -54,6 +54,14 @@ while i < 3 {
 }
 ```
 
+break 跳出循环：
+
+```fr
+while true {
+  break;
+}
+```
+
 if 条件分支：
 
 ```fr
@@ -102,16 +110,43 @@ false
 x
 ```
 
+List 字面量：
+
+```fr
+[1, 2, 3]
+```
+
+Map 字面量：
+
+```fr
+{"name": "FR", "version": 1}
+```
+
+索引读取：
+
+```fr
+items[0]
+user["name"]
+```
+
 变量赋值：
 
 ```fr
 x = x + 1
 ```
 
+索引赋值：
+
+```fr
+items[1] = 42
+user["version"] = 2
+```
+
 函数调用：
 
 ```fr
 add(1, 2)
+len("hello")
 ```
 
 future 块：
@@ -149,7 +184,11 @@ await later()
 9 / 3
 3 > 2
 3 == 3
+true or missing
+false and missing
 ```
+
+`and` 和 `or` 会短路求值：如果左侧已经决定结果，右侧不会执行。
 
 ## 变量环境
 
@@ -175,6 +214,91 @@ print(missing);
 ```txt
 第 1 行，第 7 列：变量 missing 未定义
 ```
+
+## List 模型
+
+List 使用 Python 的 `list` 作为运行时表示。
+
+当前支持：
+
+- List 字面量
+- 索引读取
+- 索引赋值
+- 输出 List
+
+示例：
+
+```fr
+let items = [1, 2, 3];
+items[1] = 42;
+print(items);
+```
+
+输出：
+
+```txt
+[1, 42, 3]
+```
+
+索引必须是整数，越界会报运行时错误。
+
+## Map 模型
+
+Map 使用 Python 的 `dict` 作为运行时表示。
+
+当前支持：
+
+- Map 字面量
+- 索引读取
+- 索引赋值
+- 输出 Map
+
+示例：
+
+```fr
+let user = {"name": "FR", "version": 1};
+user["version"] = 2;
+print(user);
+```
+
+输出：
+
+```txt
+{"name": "FR", "version": 2}
+```
+
+Map key 当前支持字符串、数字和布尔值。读取不存在的 key 会报运行时错误。
+
+## 内置函数模型
+
+解释器启动时会把原生函数定义到全局环境中。它们和用户写的函数一样通过调用表达式执行，但函数体由 Python 实现。
+
+当前内置函数：
+
+- `len(value)`：读取字符串、List 或 Map 的长度。
+- `charAt(text, index)`：读取字符串指定位置的字符。
+- `substring(text, start, end)`：读取字符串片段，包含 `start`，不包含 `end`。
+- `type(value)`：返回 `nil`、`bool`、`number`、`string`、`list`、`map`、`function` 或 `future`。
+- `str(value)`：把值转换成字符串。
+- `number(value)`：把数字字符串转换成数字。
+- `push(list, value)`：把值追加到 List 末尾，并返回追加后的长度。
+- `pop(list)`：移除并返回 List 末尾的值。
+- `readFile(path)`：读取 UTF-8 文本文件。
+
+示例：
+
+```fr
+let text = "FRLanguage";
+print(len(text));
+print(charAt(text, 2));
+print(substring(text, 0, 2));
+
+let items = [1];
+print(push(items, 2));
+print(pop(items));
+```
+
+`readFile` 只接受相对路径。命令行运行 `.fr` 文件时，相对路径会以当前源码文件所在目录为基准，并且不能读取这个目录外的文件。
 
 ## 输出模型
 
@@ -208,6 +332,8 @@ print(true);
 - 没有 `return` 时返回 `nil`
 
 函数可以读取声明位置外层环境中的变量，因此递归调用可以工作。
+
+`break` 只能跳出当前执行中的 `while` 循环，不能在循环外使用，也不能穿过函数边界。
 
 ## Future 和 Runtime 模型
 

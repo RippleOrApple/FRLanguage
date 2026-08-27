@@ -45,12 +45,86 @@ while i < 3 {
 }
 ```
 
+跳出循环：
+
+```fr
+while true {
+  break;
+}
+```
+
+逻辑运算：
+
+```fr
+if count > 0 and count < 10 {
+  print("small");
+}
+
+if count == 0 or count == 10 {
+  print("edge");
+}
+```
+
 ## 赋值
 
 ```fr
 let count = 1;
 count = count + 1;
 print(count);
+```
+
+## List
+
+```fr
+let items = [1, 2, 3];
+print(items[0]);
+
+items[1] = 42;
+print(items);
+```
+
+## Map
+
+```fr
+let user = {"name": "FR", "version": 1};
+print(user["name"]);
+
+user["version"] = 2;
+print(user);
+```
+
+## 内置函数
+
+字符串处理：
+
+```fr
+let text = "hello";
+print(len(text));
+print(charAt(text, 1));
+print(substring(text, 1, 4));
+```
+
+类型和转换：
+
+```fr
+print(type([1, 2]));
+print(str(42) + "!");
+print(number("41") + 1);
+```
+
+List 修改：
+
+```fr
+let items = [1];
+push(items, 2);
+print(pop(items));
+```
+
+文件读取：
+
+```fr
+let source = readFile("hello.fr");
+print(source);
 ```
 
 ## 函数

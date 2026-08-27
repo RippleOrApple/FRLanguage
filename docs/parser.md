@@ -52,6 +52,14 @@ while i < 3 {
 }
 ```
 
+break 语句：
+
+```fr
+while true {
+  break;
+}
+```
+
 if 条件分支：
 
 ```fr
@@ -156,6 +164,25 @@ false
 answer
 ```
 
+List 字面量：
+
+```fr
+[1, 2, 3]
+```
+
+Map 字面量：
+
+```fr
+{"name": "FR", "version": 1}
+```
+
+索引读取：
+
+```fr
+items[0]
+user["name"]
+```
+
 括号表达式：
 
 ```fr
@@ -175,12 +202,21 @@ answer
 1 + 2
 3 * 4
 answer == 42
+ready and count > 0
+name == "FR" or name == "fr"
 ```
 
 赋值表达式：
 
 ```fr
 answer = answer + 1
+```
+
+索引赋值：
+
+```fr
+items[1] = 42
+user["version"] = 2
 ```
 
 函数调用：
@@ -203,6 +239,8 @@ await future {
 
 ```txt
 =
+or
+and
 == !=
 > >= < <=
 + -
@@ -230,7 +268,11 @@ print(1 + 2 * 3);
 
 - `LiteralExpr`
 - `VariableExpr`
+- `ListExpr`
+- `MapExpr`
+- `IndexExpr`
 - `AssignExpr`
+- `IndexAssignExpr`
 - `GroupingExpr`
 - `UnaryExpr`
 - `AwaitExpr`
@@ -245,6 +287,7 @@ print(1 + 2 * 3);
 - `ExprStmt`
 - `BlockStmt`
 - `WhileStmt`
+- `BreakStmt`
 - `IfStmt`
 - `FunctionStmt`
 - `ReturnStmt`

@@ -13,6 +13,9 @@ KEYWORDS: dict[str, TokenType] = {
     "if": TokenType.IF,
     "else": TokenType.ELSE,
     "while": TokenType.WHILE,
+    "break": TokenType.BREAK,
+    "and": TokenType.AND,
+    "or": TokenType.OR,
     "true": TokenType.TRUE,
     "false": TokenType.FALSE,
     "future": TokenType.FUTURE,
@@ -57,8 +60,14 @@ class Lexer:
                 self.add_token(TokenType.LEFT_BRACE)
             case "}":
                 self.add_token(TokenType.RIGHT_BRACE)
+            case "[":
+                self.add_token(TokenType.LEFT_BRACKET)
+            case "]":
+                self.add_token(TokenType.RIGHT_BRACKET)
             case ",":
                 self.add_token(TokenType.COMMA)
+            case ":":
+                self.add_token(TokenType.COLON)
             case ".":
                 self.add_token(TokenType.DOT)
             case "-":

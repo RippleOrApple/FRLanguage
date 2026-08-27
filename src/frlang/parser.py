@@ -5,6 +5,7 @@ from .ast import (
     AwaitExpr,
     BinaryExpr,
     BlockStmt,
+    BreakStmt,
     CallExpr,
     Expr,
     ExprStmt,
@@ -12,7 +13,12 @@ from .ast import (
     FutureExpr,
     GroupingExpr,
     IfStmt,
+    IndexAssignExpr,
+    IndexExpr,
+    ListExpr,
     LiteralExpr,
+    MapEntry,
+    MapExpr,
     PrintStmt,
     Program,
     ReturnStmt,
@@ -80,6 +86,8 @@ class Parser:
             return self.print_statement()
         if self.match(TokenType.RETURN):
             return self.return_statement()
+        if self.match(TokenType.BREAK):
+            return self.break_statement()
         if self.match(TokenType.IF):
             return self.if_statement()
         if self.match(TokenType.WHILE):
@@ -113,6 +121,11 @@ class Parser:
         self.consume(TokenType.SEMICOLON, "return 语句末尾需要 ';'")
         return ReturnStmt(keyword=keyword, value=value)
 
+    def break_statement(self) -> Stmt:
+        keyword = self.previous()
+        self.consume(TokenType.SEMICOLON, "break 语句末尾需要 ';'")
+        return BreakStmt(keyword=keyword)
+
     def while_statement(self) -> Stmt:
         condition = self.expression()
         self.consume(TokenType.LEFT_BRACE, "while 条件后需要 '{'")
@@ -144,7 +157,7 @@ class Parser:
         return self.assignment()
 
     def assignment(self) -> Expr:
-        expr = self.equality()
+        expr = self.or_()
 
         if self.match(TokenType.EQUAL):
             equals = self.previous()
@@ -153,9 +166,37 @@ class Parser:
             if isinstance(expr, VariableExpr):
                 return AssignExpr(name=expr.name, value=value)
 
+            if isinstance(expr, IndexExpr):
+                return IndexAssignExpr(
+                    target=expr.target,
+                    bracket=expr.bracket,
+                    index=expr.index,
+                    value=value,
+                )
+
             raise ParserError(
                 f"第 {equals.line} 行，第 {equals.column} 列：无效的赋值目标"
             )
+
+        return expr
+
+    def or_(self) -> Expr:
+        expr = self.and_()
+
+        while self.match(TokenType.OR):
+            operator = self.previous()
+            right = self.and_()
+            expr = BinaryExpr(left=expr, operator=operator, right=right)
+
+        return expr
+
+    def and_(self) -> Expr:
+        expr = self.equality()
+
+        while self.match(TokenType.AND):
+            operator = self.previous()
+            right = self.equality()
+            expr = BinaryExpr(left=expr, operator=operator, right=right)
 
         return expr
 
@@ -223,6 +264,8 @@ class Parser:
         while True:
             if self.match(TokenType.LEFT_PAREN):
                 expr = self.finish_call(expr)
+            elif self.match(TokenType.LEFT_BRACKET):
+                expr = self.finish_index(expr)
             else:
                 break
 
@@ -239,6 +282,12 @@ class Parser:
         paren = self.consume(TokenType.RIGHT_PAREN, "函数调用参数后需要 ')'")
         return CallExpr(callee=callee, paren=paren, arguments=arguments)
 
+    def finish_index(self, target: Expr) -> Expr:
+        bracket = self.previous()
+        index = self.expression()
+        self.consume(TokenType.RIGHT_BRACKET, "索引表达式缺少 ']'")
+        return IndexExpr(target=target, bracket=bracket, index=index)
+
     def primary(self) -> Expr:
         if self.match(TokenType.FALSE):
             return LiteralExpr(False)
@@ -252,6 +301,10 @@ class Parser:
             keyword = self.previous()
             self.consume(TokenType.LEFT_BRACE, "future 后需要 '{'")
             return FutureExpr(keyword=keyword, body=self.block())
+        if self.match(TokenType.LEFT_BRACE):
+            return self.map_literal()
+        if self.match(TokenType.LEFT_BRACKET):
+            return self.list_literal()
         if self.match(TokenType.LEFT_PAREN):
             expr = self.expression()
             self.consume(TokenType.RIGHT_PAREN, "括号表达式缺少 ')'")
@@ -261,6 +314,31 @@ class Parser:
         raise ParserError(
             f"第 {token.line} 行，第 {token.column} 列：需要表达式"
         )
+
+    def list_literal(self) -> Expr:
+        elements: list[Expr] = []
+        if not self.check(TokenType.RIGHT_BRACKET):
+            while True:
+                elements.append(self.expression())
+                if not self.match(TokenType.COMMA):
+                    break
+
+        self.consume(TokenType.RIGHT_BRACKET, "列表字面量缺少 ']'")
+        return ListExpr(elements)
+
+    def map_literal(self) -> Expr:
+        entries: list[MapEntry] = []
+        if not self.check(TokenType.RIGHT_BRACE):
+            while True:
+                key = self.expression()
+                self.consume(TokenType.COLON, "Map key 后需要 ':'")
+                value = self.expression()
+                entries.append(MapEntry(key=key, value=value))
+                if not self.match(TokenType.COMMA):
+                    break
+
+        self.consume(TokenType.RIGHT_BRACE, "Map 字面量缺少 '}'")
+        return MapExpr(entries)
 
     def match(self, *types: TokenType) -> bool:
         for token_type in types:

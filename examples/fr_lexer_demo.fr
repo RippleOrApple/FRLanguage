@@ -1,0 +1,91 @@
+fn isDigit(ch) {
+  if ch == "0" {
+    return true;
+  }
+  if ch == "1" {
+    return true;
+  }
+  if ch == "2" {
+    return true;
+  }
+  if ch == "3" {
+    return true;
+  }
+  if ch == "4" {
+    return true;
+  }
+  if ch == "5" {
+    return true;
+  }
+  if ch == "6" {
+    return true;
+  }
+  if ch == "7" {
+    return true;
+  }
+  if ch == "8" {
+    return true;
+  }
+  if ch == "9" {
+    return true;
+  }
+  return false;
+}
+
+fn addToken(tokens, kind, lexeme) {
+  push(tokens, {"type": kind, "lexeme": lexeme});
+}
+
+fn scan(source) {
+  let tokens = [];
+  let current = 0;
+
+  while current < len(source) {
+    let ch = charAt(source, current);
+
+    if ch == " " {
+      current = current + 1;
+    } else {
+      if ch == ";" {
+        addToken(tokens, "SEMICOLON", ch);
+        current = current + 1;
+      } else {
+        if ch == "=" {
+          addToken(tokens, "EQUAL", ch);
+          current = current + 1;
+        } else {
+          if isDigit(ch) {
+            let start = current;
+            while current < len(source) {
+              let digit = charAt(source, current);
+              if isDigit(digit) {
+                current = current + 1;
+              } else {
+                break;
+              }
+            }
+            addToken(tokens, "NUMBER", substring(source, start, current));
+          } else {
+            let start = current;
+            while current < len(source) {
+              let part = charAt(source, current);
+              if part == " " or part == "=" or part == ";" {
+                break;
+              } else {
+                current = current + 1;
+              }
+            }
+            if start < current {
+              addToken(tokens, "IDENT", substring(source, start, current));
+            }
+          }
+        }
+      }
+    }
+  }
+
+  addToken(tokens, "EOF", "");
+  return tokens;
+}
+
+print(scan("let answer = 42;"));
