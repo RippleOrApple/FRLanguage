@@ -138,6 +138,7 @@ user["version"] = 2
 
 ```fr
 add(1, 2)
+len("hello")
 ```
 
 future 块：
@@ -255,6 +256,37 @@ print(user);
 ```
 
 Map key 当前支持字符串、数字和布尔值。读取不存在的 key 会报运行时错误。
+
+## 内置函数模型
+
+解释器启动时会把原生函数定义到全局环境中。它们和用户写的函数一样通过调用表达式执行，但函数体由 Python 实现。
+
+当前内置函数：
+
+- `len(value)`：读取字符串、List 或 Map 的长度。
+- `charAt(text, index)`：读取字符串指定位置的字符。
+- `substring(text, start, end)`：读取字符串片段，包含 `start`，不包含 `end`。
+- `type(value)`：返回 `nil`、`bool`、`number`、`string`、`list`、`map`、`function` 或 `future`。
+- `str(value)`：把值转换成字符串。
+- `number(value)`：把数字字符串转换成数字。
+- `push(list, value)`：把值追加到 List 末尾，并返回追加后的长度。
+- `pop(list)`：移除并返回 List 末尾的值。
+- `readFile(path)`：读取 UTF-8 文本文件。
+
+示例：
+
+```fr
+let text = "FRLanguage";
+print(len(text));
+print(charAt(text, 2));
+print(substring(text, 0, 2));
+
+let items = [1];
+print(push(items, 2));
+print(pop(items));
+```
+
+`readFile` 只接受相对路径。命令行运行 `.fr` 文件时，相对路径会以当前源码文件所在目录为基准，并且不能读取这个目录外的文件。
 
 ## 输出模型
 

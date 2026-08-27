@@ -1,4 +1,7 @@
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Any
 
 from frlang.errors import RuntimeError
 from frlang.ast import Program
@@ -8,10 +11,10 @@ from frlang.parser import Parser
 
 
 class InterpreterTest(unittest.TestCase):
-    def run_source(self, source: str) -> Interpreter:
+    def run_source(self, source: str, **interpreter_options: Any) -> Interpreter:
         tokens = Lexer(source).scan_tokens()
         program = Parser(tokens).parse()
-        interpreter = Interpreter()
+        interpreter = Interpreter(**interpreter_options)
         interpreter.interpret(program)
         return interpreter
 
@@ -294,6 +297,92 @@ class InterpreterTest(unittest.TestCase):
     def test_missing_map_key_raises_runtime_error(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "Map key 不存在"):
             self.run_source('print({"name": "FR"}["missing"]);')
+
+    def test_builtin_len_reads_string_list_and_map_size(self) -> None:
+        interpreter = self.run_source(
+            """
+            print(len("hello"));
+            print(len([1, 2, 3]));
+            print(len({"name": "FR", "version": 1}));
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["5", "3", "2"])
+
+    def test_builtin_string_helpers_read_text_parts(self) -> None:
+        interpreter = self.run_source(
+            """
+            print(charAt("hello", 1));
+            print(substring("hello", 1, 4));
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["e", "ell"])
+
+    def test_builtin_type_str_and_number_convert_values(self) -> None:
+        interpreter = self.run_source(
+            """
+            let missing;
+            print(type(123));
+            print(type("FR"));
+            print(type([1]));
+            print(type({"ok": true}));
+            print(type(missing));
+            print(str(42) + "!");
+            print(number("41") + 1);
+            """
+        )
+
+        self.assertEqual(
+            interpreter.output,
+            ["number", "string", "list", "map", "nil", "42!", "42"],
+        )
+
+    def test_builtin_push_and_pop_mutate_list(self) -> None:
+        interpreter = self.run_source(
+            """
+            let items = [1];
+            print(push(items, 2));
+            print(items);
+            print(pop(items));
+            print(items);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["2", "[1, 2]", "2", "[1]"])
+
+    def test_builtin_reports_argument_type_errors(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "len 参数必须是字符串、List 或 Map"):
+            self.run_source("print(len(1));")
+
+        with self.assertRaisesRegex(RuntimeError, "charAt 第 2 个参数必须是整数"):
+            self.run_source('print(charAt("hello", "1"));')
+
+        with self.assertRaisesRegex(RuntimeError, "number 无法转换这个字符串"):
+            self.run_source('print(number("abc"));')
+
+    def test_builtin_read_file_reads_relative_text_file(self) -> None:
+        with TemporaryDirectory() as directory:
+            base_path = Path(directory)
+            (base_path / "data.txt").write_text("hello\nFR", encoding="utf-8")
+            interpreter = self.run_source(
+                'print(readFile("data.txt"));',
+                base_path=base_path,
+            )
+
+        self.assertEqual(interpreter.output, ["hello\nFR"])
+
+    def test_builtin_read_file_rejects_unsafe_paths(self) -> None:
+        with TemporaryDirectory() as directory:
+            base_path = Path(directory)
+            with self.assertRaisesRegex(RuntimeError, "readFile 只支持相对路径"):
+                self.run_source(
+                    f'print(readFile("{base_path.resolve()}"));',
+                    base_path=base_path,
+                )
+
+            with self.assertRaisesRegex(RuntimeError, "readFile 不能读取工作目录外的文件"):
+                self.run_source('print(readFile("../outside.txt"));', base_path=base_path)
 
 
 if __name__ == "__main__":

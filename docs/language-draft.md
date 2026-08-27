@@ -73,6 +73,40 @@ user["version"] = 2;
 print(user);
 ```
 
+## 内置函数
+
+字符串处理：
+
+```fr
+let text = "hello";
+print(len(text));
+print(charAt(text, 1));
+print(substring(text, 1, 4));
+```
+
+类型和转换：
+
+```fr
+print(type([1, 2]));
+print(str(42) + "!");
+print(number("41") + 1);
+```
+
+List 修改：
+
+```fr
+let items = [1];
+push(items, 2);
+print(pop(items));
+```
+
+文件读取：
+
+```fr
+let source = readFile("hello.fr");
+print(source);
+```
+
 ## 函数
 
 ```fr

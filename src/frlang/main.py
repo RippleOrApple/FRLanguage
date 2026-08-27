@@ -9,11 +9,11 @@ from .lexer import Lexer
 from .parser import Parser
 
 
-def run_source(source: str) -> list[str]:
+def run_source(source: str, base_path: Path | str | None = None) -> list[str]:
     """运行源码并返回输出行。"""
     tokens = Lexer(source).scan_tokens()
     program = Parser(tokens).parse()
-    interpreter = Interpreter()
+    interpreter = Interpreter(base_path=base_path)
     interpreter.interpret(program)
     return interpreter.output
 
@@ -26,14 +26,15 @@ def main(argv: list[str] | None = None) -> None:
         raise SystemExit(64)
 
     try:
-        source = Path(args[0]).read_text(encoding="utf-8")
+        source_path = Path(args[0])
+        source = source_path.read_text(encoding="utf-8")
     except OSError as error:
         print(f"文件读取失败：{args[0]}", file=sys.stderr)
         print(str(error), file=sys.stderr)
         raise SystemExit(66) from None
 
     try:
-        output = run_source(source)
+        output = run_source(source, base_path=source_path.parent)
     except FRLanguageError as error:
         print(f"错误：{error}", file=sys.stderr)
         raise SystemExit(70) from None

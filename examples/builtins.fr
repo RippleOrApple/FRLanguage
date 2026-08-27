@@ -1,0 +1,19 @@
+let text = "FRLanguage";
+
+print(len(text));
+print(charAt(text, 2));
+print(substring(text, 0, 2));
+print(type(text));
+
+let items = [1, 2];
+print(push(items, 3));
+print(items);
+print(pop(items));
+print(items);
+
+let config = {"name": "FR", "version": number("1")};
+print(len(config));
+print(str(config));
+
+let fileText = readFile("sample.txt");
+print(substring(fileText, 0, 5));
