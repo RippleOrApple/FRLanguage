@@ -32,3 +32,13 @@
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_demo.fr`：输出 Token 列表。
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/builtins.fr`：通过。
+- 开始实现最小模块系统：为 `import "helper.fr";` 写 Lexer、Interpreter 和 CLI 测试。
+- 运行相关测试，新增测试按预期失败：`TokenType.IMPORT` 不存在，Parser 还把 `import` 当作普通表达式处理。
+- 实现 `ImportStmt`、`import` 关键字、Parser 语句解析和解释器导入执行。
+- `import` 以当前源码文件所在目录为基准，拒绝绝对路径和目录逃逸，并缓存已导入文件，避免重复执行。
+- 新增 `examples/fr_lexer_helpers.fr`，把 `fr_lexer_demo.fr` 中的 `isDigit` 和 `addToken` 拆出。
+- 更新 README、Lexer、Parser、Interpreter、语言草案、路线图和自举准备笔记。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：67 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_demo.fr`：导入 helper 后输出 Token 列表。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/builtins.fr`：通过。

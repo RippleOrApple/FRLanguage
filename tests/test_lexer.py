@@ -116,6 +116,17 @@ class LexerTest(unittest.TestCase):
             ],
         )
 
+    def test_scans_import_keyword(self) -> None:
+        self.assertEqual(
+            self.token_types('import "helper.fr";'),
+            [
+                TokenType.IMPORT,
+                TokenType.STRING,
+                TokenType.SEMICOLON,
+                TokenType.EOF,
+            ],
+        )
+
     def test_ignores_line_comments(self) -> None:
         tokens = self.token_types("let x = 1; // ignore this\nprint(x);")
 

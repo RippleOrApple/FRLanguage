@@ -17,6 +17,14 @@ let name = "FRLanguage";
 let count = 3;
 ```
 
+## 导入
+
+```fr
+import "helper.fr";
+```
+
+当前导入会执行目标文件，同一个文件只执行一次。导入路径必须是相对路径。
+
 ## 输出
 
 ```fr

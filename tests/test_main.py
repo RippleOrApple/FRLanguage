@@ -32,6 +32,29 @@ class MainTest(unittest.TestCase):
 
         self.assertEqual(stdout.getvalue(), "from sibling file\n")
 
+    def test_main_resolves_import_from_source_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source_path = Path(directory) / "program.fr"
+            helper_path = Path(directory) / "helper.fr"
+            helper_path.write_text(
+                """
+                fn message() {
+                  return "from import";
+                }
+                """,
+                encoding="utf-8",
+            )
+            source_path.write_text(
+                'import "helper.fr";\nprint(message());\n',
+                encoding="utf-8",
+            )
+
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                main([str(source_path)])
+
+        self.assertEqual(stdout.getvalue(), "from import\n")
+
     def test_main_reports_language_error_without_traceback(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             source_path = Path(directory) / "program.fr"

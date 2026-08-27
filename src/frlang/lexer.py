@@ -8,6 +8,7 @@ from .token import Token, TokenType
 
 KEYWORDS: dict[str, TokenType] = {
     "let": TokenType.LET,
+    "import": TokenType.IMPORT,
     "fn": TokenType.FN,
     "return": TokenType.RETURN,
     "if": TokenType.IF,

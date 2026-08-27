@@ -119,6 +119,62 @@ class InterpreterTest(unittest.TestCase):
                 """
             )
 
+    def test_import_runs_relative_file_and_exposes_definitions(self) -> None:
+        with TemporaryDirectory() as directory:
+            base_path = Path(directory)
+            (base_path / "helper.fr").write_text(
+                """
+                fn addOne(value) {
+                  return value + 1;
+                }
+                """,
+                encoding="utf-8",
+            )
+            interpreter = self.run_source(
+                """
+                import "helper.fr";
+                print(addOne(41));
+                """,
+                base_path=base_path,
+            )
+
+        self.assertEqual(interpreter.output, ["42"])
+
+    def test_import_executes_each_file_once(self) -> None:
+        with TemporaryDirectory() as directory:
+            base_path = Path(directory)
+            (base_path / "helper.fr").write_text(
+                """
+                print("loading");
+                fn label() {
+                  return "ok";
+                }
+                """,
+                encoding="utf-8",
+            )
+            interpreter = self.run_source(
+                """
+                import "helper.fr";
+                import "helper.fr";
+                print(label());
+                """,
+                base_path=base_path,
+            )
+
+        self.assertEqual(interpreter.output, ["loading", "ok"])
+
+    def test_import_rejects_unsafe_paths(self) -> None:
+        with TemporaryDirectory() as directory:
+            base_path = Path(directory)
+            with self.assertRaisesRegex(RuntimeError, "import 只支持相对路径"):
+                self.run_source(
+                    f'import "{base_path.resolve()}";',
+                    base_path=base_path,
+                )
+
+            with self.assertRaisesRegex(RuntimeError, "import 不能读取工作目录外的文件"):
+                self.run_source('import "../outside.fr";', base_path=base_path)
+
     def test_runs_if_then_branch(self) -> None:
         interpreter = self.run_source(
             """

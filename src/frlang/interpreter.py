@@ -17,6 +17,7 @@ from .ast import (
     FutureExpr,
     GroupingExpr,
     IfStmt,
+    ImportStmt,
     IndexAssignExpr,
     IndexExpr,
     ListExpr,
@@ -130,6 +131,7 @@ class Interpreter:
         self.runtime = Runtime()
         self.output: list[str] = []
         self.base_path = Path.cwd() if base_path is None else Path(base_path)
+        self.imported_paths: set[Path] = set()
         self.define_native_functions()
 
     def interpret(self, program: Program) -> None:
@@ -146,6 +148,10 @@ class Interpreter:
             if statement.initializer is not None:
                 value = self.evaluate(statement.initializer)
             self.environment.define(statement.name.lexeme, value)
+            return
+
+        if isinstance(statement, ImportStmt):
+            self.execute_import(statement)
             return
 
         if isinstance(statement, FunctionStmt):
@@ -200,6 +206,34 @@ class Interpreter:
                 self.execute(statement)
         finally:
             self.environment = previous
+
+    def execute_import(self, statement: ImportStmt) -> None:
+        target_path = self.resolve_relative_path(
+            statement.path,
+            statement.path.literal,
+            "import",
+        )
+        if target_path in self.imported_paths:
+            return
+
+        self.imported_paths.add(target_path)
+        try:
+            source = target_path.read_text(encoding="utf-8")
+        except OSError as error:
+            self.raise_runtime_error(statement.path, f"import 读取失败：{error}")
+
+        from .lexer import Lexer
+        from .parser import Parser
+
+        tokens = Lexer(source).scan_tokens()
+        program = Parser(tokens).parse()
+
+        previous_base_path = self.base_path
+        try:
+            self.base_path = target_path.parent
+            self.interpret(program)
+        finally:
+            self.base_path = previous_base_path
 
     def evaluate(self, expression: Expr) -> Any:
         if isinstance(expression, LiteralExpr):
@@ -525,21 +559,25 @@ class Interpreter:
         if not isinstance(path, str):
             interpreter.raise_runtime_error(token, "readFile 参数必须是字符串")
 
-        requested_path = Path(path)
-        if requested_path.is_absolute():
-            interpreter.raise_runtime_error(token, "readFile 只支持相对路径")
-
-        base_path = interpreter.base_path.resolve()
-        target_path = (base_path / requested_path).resolve()
-        try:
-            target_path.relative_to(base_path)
-        except ValueError:
-            interpreter.raise_runtime_error(token, "readFile 不能读取工作目录外的文件")
+        target_path = interpreter.resolve_relative_path(token, path, "readFile")
 
         try:
             return target_path.read_text(encoding="utf-8")
         except OSError as error:
             interpreter.raise_runtime_error(token, f"readFile 读取失败：{error}")
+
+    def resolve_relative_path(self, token: Token, path: str, label: str) -> Path:
+        requested_path = Path(path)
+        if requested_path.is_absolute():
+            self.raise_runtime_error(token, f"{label} 只支持相对路径")
+
+        base_path = self.base_path.resolve()
+        target_path = (base_path / requested_path).resolve()
+        try:
+            target_path.relative_to(base_path)
+        except ValueError:
+            self.raise_runtime_error(token, f"{label} 不能读取工作目录外的文件")
+        return target_path
 
     @staticmethod
     def stringify(value: Any) -> str:

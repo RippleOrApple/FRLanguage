@@ -13,6 +13,7 @@ from .ast import (
     FutureExpr,
     GroupingExpr,
     IfStmt,
+    ImportStmt,
     IndexAssignExpr,
     IndexExpr,
     ListExpr,
@@ -47,11 +48,19 @@ class Parser:
         return Program(statements=statements)
 
     def declaration(self) -> Stmt:
+        if self.match(TokenType.IMPORT):
+            return self.import_statement()
         if self.match(TokenType.FN):
             return self.function_declaration()
         if self.match(TokenType.LET):
             return self.var_declaration()
         return self.statement()
+
+    def import_statement(self) -> Stmt:
+        keyword = self.previous()
+        path = self.consume(TokenType.STRING, "import 后需要字符串路径")
+        self.consume(TokenType.SEMICOLON, "import 语句末尾需要 ';'")
+        return ImportStmt(keyword=keyword, path=path)
 
     def function_declaration(self) -> Stmt:
         name = self.consume(TokenType.IDENTIFIER, "函数声明需要函数名")

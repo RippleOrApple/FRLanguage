@@ -136,11 +136,13 @@ let source = readFile("hello.fr");
 print(source);
 ```
 
-后续再做模块系统：
+当前已完成最小模块导入：
 
 ```fr
 import "lexer.fr";
 ```
+
+后续再扩展完整模块系统。
 
 需要注意：
 

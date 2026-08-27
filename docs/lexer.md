@@ -51,6 +51,7 @@ Lexer 负责把源码字符串转换成 Token 列表。它不理解语法结构�
 关键字：
 
 - `let`
+- `import`
 - `fn`
 - `return`
 - `if`

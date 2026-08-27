@@ -34,6 +34,7 @@ FRLanguage 是一个使用 Python 编写的教学型小语言项目。目标不�
 - 类型和转换：`type(value)`、`str(value)`、`number(value)`
 - List 修改：`push(list, value)`、`pop(list)`
 - 文件读取：`readFile("相对路径")`
+- 模块导入：`import "相对路径.fr";`
 - 逻辑运算：`and`、`or`
 - 条件分支：`if 条件 { ... } else { ... }`
 - 循环：`while 条件 { ... }`、`break;`
@@ -94,14 +95,14 @@ print(missing);
 ## 当前限制
 
 - 没有静态类型检查
-- 没有模块系统
+- 模块系统还很小，只支持执行式 `import "文件.fr";`
 - 没有类和对象系统
 - Runtime 是协作式任务队列，不是真正多线程或 IO 异步
 - `await` 当前通过 Runtime 队列运行 Future 任务，还没有完整的暂停和恢复调用栈模型
 
 ## 后续方向
 
-- 增加模块系统
+- 扩展模块系统，例如命名空间、导出控制和导入链错误信息
 - 清理类型注解，减少编辑器类型检查红线
 - 增加更多错误测试
 - 做 REPL 交互式命令行
