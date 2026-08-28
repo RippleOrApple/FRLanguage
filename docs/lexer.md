@@ -62,6 +62,7 @@ Lexer 负责把源码字符串转换成 Token 列表。它不理解语法结构�
 - `or`
 - `true`
 - `false`
+- `nil`
 - `future`
 - `await`
 - `print`
@@ -110,6 +111,12 @@ Lexer 会忽略从 `//` 到当前行末尾的内容。
 ```fr
 true
 false
+```
+
+空值：
+
+```fr
+nil
 ```
 
 ## 位置信息

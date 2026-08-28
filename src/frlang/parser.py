@@ -387,6 +387,8 @@ class Parser:
             return LiteralExpr(False)
         if self.match(TokenType.TRUE):
             return LiteralExpr(True)
+        if self.match(TokenType.NIL):
+            return LiteralExpr(None)
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return LiteralExpr(self.previous().literal)
         if self.match(TokenType.IDENTIFIER):

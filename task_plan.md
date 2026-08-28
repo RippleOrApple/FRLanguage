@@ -25,6 +25,7 @@
 - [x] 阶段 16：增加 Python Lexer 与 FR Lexer 的结构化对照测试。
 - [x] 阶段 17：增加 FR Lexer 错误 Token 与 Python Lexer 错误信息的对照测试。
 - [x] 阶段 18：增加字符串转义支持，并让 Python Lexer、解释器和 FR Lexer demo 行为对齐。
+- [x] 阶段 19：增加显式 `nil` 字面量，并同步 Python 语言链路和 FR Lexer demo。
 
 ## 决策
 

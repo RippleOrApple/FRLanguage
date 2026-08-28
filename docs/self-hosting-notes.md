@@ -20,6 +20,7 @@ FR 现在已经具备一批写 Lexer demo 需要的基础能力：
 - `and` / `or`：组合扫描条件，并支持短路求值。
 - `break`：在扫描循环中遇到边界字符时退出。
 - 字符串转义：可以直接写 `\"`、`\\`、`\n`、`\t` 和 `\r`。
+- `nil` 字面量：可以直接表达空 literal，不必再写 `let literal;` 这类占位声明。
 
 这些能力还不足以写完整编译器，但已经足够写一个非常小的扫描器。
 
@@ -36,6 +37,7 @@ examples/fr_lexer_error_sample.fr.txt
 examples/fr_lexer_unterminated_string_sample.fr.txt
 examples/fr_lexer_unknown_escape_sample.fr.txt
 examples/fr_lexer_escaped_string_sample.fr.txt
+examples/fr_lexer_nil_sample.fr.txt
 examples/fr_lexer_compare_sample.fr.txt
 examples/fr_lexer_keywords_sample.fr.txt
 examples/fr_lexer_sample.fr.txt
@@ -59,7 +61,7 @@ if name == "FR" {
 
 错误样例会输出 `ERROR` Token，用来展示未识别字符和未闭合字符串的处理方式。当前 FR 还没有异常机制，所以 FR Lexer 不抛出错误，而是把错误作为 Token 放进扫描结果。
 
-当前测试已经会把 FR Lexer 的输出和 Python Lexer 的输出做结构化对照，覆盖基础源码、更多符号、关键字样例、转义字符串样例和基础错误样例。
+当前测试已经会把 FR Lexer 的输出和 Python Lexer 的输出做结构化对照，覆盖基础源码、更多符号、关键字样例、`nil` 样例、转义字符串样例和基础错误样例。
 
 ## 这个 demo 的限制
 

@@ -107,6 +107,21 @@ class ExampleTest(unittest.TestCase):
             self.python_lexer_tokens(source),
         )
 
+    def test_fr_lexer_scans_nil_keyword(self) -> None:
+        """验证 FR Lexer 会把 nil 扫描成关键字 Token。"""
+        tokens = self.run_fr_lexer("fr_lexer_nil_sample.fr.txt")
+
+        self.assertIn(
+            {
+                "type": "NIL",
+                "lexeme": "nil",
+                "literal": None,
+                "line": 1,
+                "column": 13,
+            },
+            tokens,
+        )
+
     def test_fr_lexer_matches_python_lexer_for_escaped_strings(self) -> None:
         """验证 FR Lexer 在转义字符串上和 Python Lexer 输出一致。"""
         source = Path("examples/fr_lexer_escaped_string_sample.fr.txt").read_text(

@@ -162,6 +162,7 @@ PrintStmt(
 "hello"
 true
 false
+nil
 ```
 
 变量读取：

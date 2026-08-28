@@ -112,6 +112,9 @@ fn keywordType(text) {
   if text == "false" {
     return "FALSE";
   }
+  if text == "nil" {
+    return "NIL";
+  }
   if text == "future" {
     return "FUTURE";
   }
@@ -132,8 +135,10 @@ fn keywordLiteral(text) {
   if text == "false" {
     return false;
   }
-  let literal;
-  return literal;
+  if text == "nil" {
+    return nil;
+  }
+  return nil;
 }
 
 // 识别单字符符号对应的 Token 类型。

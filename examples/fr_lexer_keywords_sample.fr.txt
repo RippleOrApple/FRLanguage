@@ -11,3 +11,4 @@ if true and false or ready {
     print(ready);
   }
 }
+let empty = nil;

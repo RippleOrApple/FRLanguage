@@ -64,3 +64,5 @@
 - 为 Python Lexer 增加字符串转义支持：`\"`、`\\`、`\n`、`\t`、`\r`。
 - 新增解释器输出测试，确认字符串 literal 会先解析转义再进入运行时。
 - FR Lexer demo 同步支持字符串转义，并新增转义字符串样例和未知转义错误样例的结构化对照测试。
+- 增加显式 `nil` 字面量：Lexer 会识别 `nil` 关键字，Parser 会生成 `LiteralExpr(None)`，解释器可直接输出和比较 `nil`。
+- FR Lexer demo 同步识别 `nil`，并新增 `examples/fr_lexer_nil_sample.fr.txt` 覆盖关键字 Token。

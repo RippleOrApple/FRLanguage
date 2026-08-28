@@ -12,6 +12,7 @@ from frlang.parser import Parser
 
 class InterpreterTest(unittest.TestCase):
     def run_source(self, source: str, **interpreter_options: Any) -> Interpreter:
+        """运行一段 FR 源码，并返回执行后的解释器对象。"""
         tokens = Lexer(source).scan_tokens()
         program = Parser(tokens).parse()
         interpreter = Interpreter(**interpreter_options)
@@ -41,6 +42,18 @@ class InterpreterTest(unittest.TestCase):
         )
 
         self.assertEqual(interpreter.output, ["-9", "true", "true"])
+
+    def test_runs_nil_literal(self) -> None:
+        """验证源码可以直接写 nil，并按空值参与输出和比较。"""
+        interpreter = self.run_source(
+            """
+            print(nil);
+            print(nil == nil);
+            print(!nil);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["nil", "true", "true"])
 
     def test_raises_runtime_error_for_undefined_variable(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "变量 missing 未定义"):

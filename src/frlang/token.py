@@ -48,6 +48,7 @@ class TokenType(Enum):
     OR = auto()
     TRUE = auto()
     FALSE = auto()
+    NIL = auto()
     FUTURE = auto()
     AWAIT = auto()
     PRINT = auto()

@@ -7,6 +7,7 @@ from frlang.token import TokenType
 
 class LexerTest(unittest.TestCase):
     def token_types(self, source: str) -> list[TokenType]:
+        """扫描源码并只返回 Token 类型，方便断言词法结构。"""
         return [token.type for token in Lexer(source).scan_tokens()]
 
     def test_empty_source_returns_eof(self) -> None:
@@ -131,6 +132,14 @@ class LexerTest(unittest.TestCase):
                 TokenType.EOF,
             ],
         )
+
+    def test_scans_nil_keyword_with_nil_literal(self) -> None:
+        """验证 nil 会被识别为关键字，并携带运行时 nil 值。"""
+        tokens = Lexer("nil").scan_tokens()
+
+        self.assertEqual(tokens[0].type.name, "NIL")
+        self.assertEqual(tokens[0].lexeme, "nil")
+        self.assertIsNone(tokens[0].literal)
 
     def test_scans_import_keyword(self) -> None:
         self.assertEqual(

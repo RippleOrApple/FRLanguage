@@ -19,6 +19,7 @@ KEYWORDS: dict[str, TokenType] = {
     "or": TokenType.OR,
     "true": TokenType.TRUE,
     "false": TokenType.FALSE,
+    "nil": TokenType.NIL,
     "future": TokenType.FUTURE,
     "await": TokenType.AWAIT,
     "print": TokenType.PRINT,

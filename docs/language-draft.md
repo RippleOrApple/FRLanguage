@@ -15,6 +15,14 @@
 ```fr
 let name = "FRLanguage";
 let count = 3;
+let missing = nil;
+```
+
+`nil` 表示空值，也可以通过没有初始化表达式的变量声明得到：
+
+```fr
+let empty;
+print(empty == nil);
 ```
 
 ## 导入
