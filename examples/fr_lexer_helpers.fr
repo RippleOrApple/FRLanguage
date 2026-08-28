@@ -232,11 +232,54 @@ fn hasFractionPart(scanner) {
   return peekChar(scanner) == "." and isDigit(peekNextChar(scanner));
 }
 
+// 判断字符是否是字符串转义使用的反斜杠。
+fn isBackslash(ch) {
+  return ch == "\\";
+}
+
+// 把字符串转义字符转换成对应的真实字符。
+fn stringEscapeValue(ch) {
+  if ch == "\"" {
+    return "\"";
+  }
+  if ch == "\\" {
+    return "\\";
+  }
+  if ch == "n" {
+    return "\n";
+  }
+  if ch == "t" {
+    return "\t";
+  }
+  if ch == "r" {
+    return "\r";
+  }
+  return "";
+}
+
 // 从当前位置继续扫描字符串字面量。
 fn scanString(scanner, start, line, column) {
-  let contentStart = scanner["current"];
+  let literal = "";
   while !isAtEnd(scanner) and !isQuote(peekChar(scanner)) {
-    advance(scanner);
+    let ch = advance(scanner);
+    if isBackslash(ch) {
+      if isAtEnd(scanner) {
+        let lexeme = substring(scanner["source"], start, scanner["current"]);
+        addErrorToken(scanner, lexeme, "字符串没有结束", line, column);
+        return;
+      }
+
+      let escaped = advance(scanner);
+      let value = stringEscapeValue(escaped);
+      if value == "" {
+        let lexeme = substring(scanner["source"], start, scanner["current"]);
+        addErrorToken(scanner, lexeme, "未知字符串转义：\\" + escaped, line, column);
+        return;
+      }
+      literal = literal + value;
+    } else {
+      literal = literal + ch;
+    }
   }
 
   if isAtEnd(scanner) {
@@ -247,7 +290,6 @@ fn scanString(scanner, start, line, column) {
 
   advance(scanner);
   let lexeme = substring(scanner["source"], start, scanner["current"]);
-  let literal = substring(scanner["source"], contentStart, scanner["current"] - 1);
   addToken(scanner, "STRING", lexeme, literal, line, column);
 }
 

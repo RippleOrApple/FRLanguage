@@ -154,16 +154,28 @@ class Lexer:
     def string(self) -> None:
         """扫描双引号字符串字面量。
 
-        字符串一直读到下一个 `"`。当前实现不处理转义字符，未闭合字符串会抛出词法错误。
+        字符串会把支持的转义序列转换进 literal，未闭合或未知转义都会抛出词法错误。
         """
+        literal_chars: list[str] = []
         while self.peek() != '"' and not self.is_at_end():
-            self.advance()
+            if self.peek() == "\\":
+                self.advance()
+                if self.is_at_end():
+                    self.raise_error("字符串没有结束")
+
+                escaped = self.advance()
+                literal = self.string_escape_value(escaped)
+                if literal is None:
+                    self.raise_error(f"未知字符串转义：\\{escaped}")
+                literal_chars.append(literal)
+            else:
+                literal_chars.append(self.advance())
 
         if self.is_at_end():
             self.raise_error("字符串没有结束")
 
         self.advance()
-        literal = self.source[self.start + 1 : self.current - 1]
+        literal = "".join(literal_chars)
         self.add_token(TokenType.STRING, literal)
 
     def skip_line_comment(self) -> None:
@@ -242,6 +254,18 @@ class Lexer:
         if token_type is TokenType.FALSE:
             return False
         return None
+
+    @staticmethod
+    def string_escape_value(char: str) -> str | None:
+        """把字符串转义字符转换成真实字符，不支持时返回 None。"""
+        escapes = {
+            '"': '"',
+            "\\": "\\",
+            "n": "\n",
+            "t": "\t",
+            "r": "\r",
+        }
+        return escapes.get(char)
 
     @staticmethod
     def is_identifier_start(char: str) -> bool:

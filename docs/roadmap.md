@@ -110,6 +110,7 @@ print(user["name"]);
 - `codePoint(ch)`
 - `push(list, value)`
 - `pop(list)`
+- 字符串转义：`\"`、`\\`、`\n`、`\t`、`\r`
 
 示例：
 
@@ -125,6 +126,7 @@ print(codePoint("A"));
 
 - FR 能处理字符串扫描。
 - FR 能实现简单 Lexer demo。
+- Python Lexer 和 FR Lexer demo 能在转义字符串样例上保持一致。
 
 完成标准：
 

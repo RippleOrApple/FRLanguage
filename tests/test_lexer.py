@@ -79,6 +79,22 @@ class LexerTest(unittest.TestCase):
         self.assertEqual(tokens[8].literal, 12.5)
         self.assertEqual(tokens[10].literal, 2)
 
+    def test_scans_string_escape_sequences(self) -> None:
+        """验证字符串转义会被解析成真实 literal。"""
+        source = '"quote: \\" slash: \\\\ line: \\n tab: \\t return: \\r"'
+        tokens = Lexer(source).scan_tokens()
+
+        self.assertIs(tokens[0].type, TokenType.STRING)
+        self.assertEqual(
+            tokens[0].literal,
+            'quote: " slash: \\ line: \n tab: \t return: \r',
+        )
+
+    def test_unknown_string_escape_raises_lexer_error(self) -> None:
+        """验证未知字符串转义会报词法错误。"""
+        with self.assertRaisesRegex(LexerError, r"未知字符串转义：\\x"):
+            Lexer('"bad \\x"').scan_tokens()
+
     def test_scans_list_brackets(self) -> None:
         self.assertEqual(
             self.token_types("[1, 2]"),

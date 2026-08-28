@@ -107,6 +107,17 @@ class ExampleTest(unittest.TestCase):
             self.python_lexer_tokens(source),
         )
 
+    def test_fr_lexer_matches_python_lexer_for_escaped_strings(self) -> None:
+        """验证 FR Lexer 在转义字符串上和 Python Lexer 输出一致。"""
+        source = Path("examples/fr_lexer_escaped_string_sample.fr.txt").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertEqual(
+            self.run_fr_lexer("fr_lexer_escaped_string_sample.fr.txt"),
+            self.python_lexer_tokens(source),
+        )
+
     def test_fr_lexer_error_token_matches_python_bad_character_error(self) -> None:
         """验证坏字符错误 Token 的核心消息和 Python Lexer 一致。"""
         source = Path("examples/fr_lexer_bad_char_sample.fr.txt").read_text(
@@ -131,6 +142,19 @@ class ExampleTest(unittest.TestCase):
         self.assertEqual(error_token["line"], 1)
         self.assertEqual(error_token["column"], 1)
         self.assertEqual(error_token["lexeme"], source)
+        self.assertEqual(error_token["literal"], self.python_lexer_error_message(source))
+
+    def test_fr_lexer_error_token_matches_python_unknown_escape_error(self) -> None:
+        """验证未知字符串转义错误 Token 的核心消息和 Python Lexer 一致。"""
+        source = Path("examples/fr_lexer_unknown_escape_sample.fr.txt").read_text(
+            encoding="utf-8"
+        )
+        error_token = self.first_error_token("fr_lexer_unknown_escape_sample.fr.txt")
+        expected_lexeme = source.rstrip("\n")[:-1]
+
+        self.assertEqual(error_token["line"], 1)
+        self.assertEqual(error_token["column"], 1)
+        self.assertEqual(error_token["lexeme"], expected_lexeme)
         self.assertEqual(error_token["literal"], self.python_lexer_error_message(source))
 
     def test_fr_lexer_demo_scans_keywords_strings_comments_and_symbols(self) -> None:

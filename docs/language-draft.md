@@ -32,6 +32,15 @@ print("hello");
 print(1 + 2);
 ```
 
+字符串支持少量常用转义：
+
+```fr
+print("quote: \"");
+print("line\nnext");
+print("tab:\t!");
+print("slash: \\");
+```
+
 ## 条件分支
 
 ```fr

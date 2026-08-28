@@ -166,9 +166,10 @@ class InterpreterTest(unittest.TestCase):
     def test_import_rejects_unsafe_paths(self) -> None:
         with TemporaryDirectory() as directory:
             base_path = Path(directory)
+            unsafe_path = base_path.resolve().as_posix()
             with self.assertRaisesRegex(RuntimeError, "import 只支持相对路径"):
                 self.run_source(
-                    f'import "{base_path.resolve()}";',
+                    f'import "{unsafe_path}";',
                     base_path=base_path,
                 )
 
@@ -470,6 +471,18 @@ class InterpreterTest(unittest.TestCase):
             ],
         )
 
+    def test_prints_string_escape_sequences(self) -> None:
+        """验证解释器输出字符串时会使用解析后的转义内容。"""
+        interpreter = self.run_source(
+            r"""
+            print("a\nb");
+            print("quote: \"");
+            print("tab:\t!");
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["a\nb", 'quote: "', "tab:\t!"])
+
     def test_builtin_type_str_and_number_convert_values(self) -> None:
         """验证类型查询、字符串转换和数字转换内置函数。"""
         interpreter = self.run_source(
@@ -540,9 +553,10 @@ class InterpreterTest(unittest.TestCase):
     def test_builtin_read_file_rejects_unsafe_paths(self) -> None:
         with TemporaryDirectory() as directory:
             base_path = Path(directory)
+            unsafe_path = base_path.resolve().as_posix()
             with self.assertRaisesRegex(RuntimeError, "readFile 只支持相对路径"):
                 self.run_source(
-                    f'print(readFile("{base_path.resolve()}"));',
+                    f'print(readFile("{unsafe_path}"));',
                     base_path=base_path,
                 )
 

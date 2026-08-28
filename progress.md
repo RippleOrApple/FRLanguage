@@ -61,3 +61,6 @@
 - 将 FR Lexer demo 的普通标识符 Token 名称从 `IDENT` 统一为 Python Lexer 使用的 `IDENTIFIER`。
 - 新增坏字符和未闭合字符串的错误对照测试，确认 FR 的 `ERROR` Token 与 Python Lexer 的核心错误消息一致。
 - 调整 FR Lexer 的坏字符错误消息，从 `无法识别的字符` 改为 `无法识别的字符：具体字符`。
+- 为 Python Lexer 增加字符串转义支持：`\"`、`\\`、`\n`、`\t`、`\r`。
+- 新增解释器输出测试，确认字符串 literal 会先解析转义再进入运行时。
+- FR Lexer demo 同步支持字符串转义，并新增转义字符串样例和未知转义错误样例的结构化对照测试。

@@ -24,6 +24,7 @@
 - [x] 阶段 15：让 FR Lexer demo 输出 literal、行列号和错误 Token。
 - [x] 阶段 16：增加 Python Lexer 与 FR Lexer 的结构化对照测试。
 - [x] 阶段 17：增加 FR Lexer 错误 Token 与 Python Lexer 错误信息的对照测试。
+- [x] 阶段 18：增加字符串转义支持，并让 Python Lexer、解释器和 FR Lexer demo 行为对齐。
 
 ## 决策
 
