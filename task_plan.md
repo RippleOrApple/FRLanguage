@@ -23,6 +23,7 @@
 - [x] 阶段 14：扩展 FR Lexer demo，支持关键字、字符串、注释、空白和更多符号。
 - [x] 阶段 15：让 FR Lexer demo 输出 literal、行列号和错误 Token。
 - [x] 阶段 16：增加 Python Lexer 与 FR Lexer 的结构化对照测试。
+- [x] 阶段 17：增加 FR Lexer 错误 Token 与 Python Lexer 错误信息的对照测试。
 
 ## 决策
 

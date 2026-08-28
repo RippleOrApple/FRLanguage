@@ -20,6 +20,7 @@
 - FR 当前没有字符串转义语法，所以扫描双引号和换行时需要借助 `codePoint(ch)` 这类字符编码函数。
 - 当 FR Lexer demo 需要返回多个扫描状态时，Map 比多个并行变量更适合，后续可以自然演化成 scanner 对象。
 - FR Lexer 和 Python Lexer 做结构化对照时，直接读取解释器里的运行时 List/Map 比解析打印文本更可靠。
+- FR 当前没有异常机制，FR Lexer 用 `ERROR` Token 表达错误更贴合现阶段能力；测试可以只对齐核心错误消息。
 
 ## 路线判断
 

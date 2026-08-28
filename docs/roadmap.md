@@ -322,6 +322,7 @@ fr_lexer.fr
 - `fr_lexer.fr` 能扫描一小部分 FR 源码。
 - Python Lexer 和 FR Lexer 在测试样例上结果一致。
 - 对照测试应逐步覆盖基础源码、关键字、集合字面量、运算符和错误场景。
+- 在 FR 没有异常机制前，词法错误可以先用 `ERROR` Token 表达。
 
 ## 阶段 9：自举解释器
 

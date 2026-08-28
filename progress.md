@@ -59,3 +59,5 @@
 - 把 FR Lexer demo 的 `scan(source)` 入口移动到 helper 中，让正常样例和错误样例复用同一套扫描逻辑。
 - 新增 Python Lexer 与 FR Lexer 的结构化对照测试，覆盖基础源码、更多符号和完整关键字样例。
 - 将 FR Lexer demo 的普通标识符 Token 名称从 `IDENT` 统一为 Python Lexer 使用的 `IDENTIFIER`。
+- 新增坏字符和未闭合字符串的错误对照测试，确认 FR 的 `ERROR` Token 与 Python Lexer 的核心错误消息一致。
+- 调整 FR Lexer 的坏字符错误消息，从 `无法识别的字符` 改为 `无法识别的字符：具体字符`。

@@ -320,7 +320,7 @@ fn scanToken(scanner) {
     return;
   }
 
-  addErrorToken(scanner, ch, "无法识别的字符", line, column);
+  addErrorToken(scanner, ch, "无法识别的字符：" + ch, line, column);
 }
 
 // 扫描一段源码字符串，返回完整的 Token 列表。

@@ -4,6 +4,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Any
 
+from frlang.errors import LexerError
 from frlang.interpreter import Interpreter, MapKey
 from frlang.lexer import Lexer
 from frlang.main import main
@@ -62,6 +63,19 @@ class ExampleTest(unittest.TestCase):
             for token in Lexer(source).scan_tokens()
         ]
 
+    def python_lexer_error_message(self, source: str) -> str:
+        """运行 Python Lexer，并返回去掉行列前缀后的核心错误消息。"""
+        with self.assertRaises(LexerError) as error_context:
+            Lexer(source).scan_tokens()
+        return str(error_context.exception).split("：", maxsplit=1)[1]
+
+    def first_error_token(self, source_path: str) -> dict[str, Any]:
+        """运行 FR Lexer，并返回它产出的第一个 ERROR Token。"""
+        for token in self.run_fr_lexer(source_path):
+            if token["type"] == "ERROR":
+                return token
+        self.fail("FR Lexer 没有产出 ERROR Token")
+
     def test_fr_lexer_matches_python_lexer_for_basic_source(self) -> None:
         """验证 FR Lexer 在基础源码上和 Python Lexer 输出一致。"""
         source = Path("examples/fr_lexer_sample.fr.txt").read_text(encoding="utf-8")
@@ -92,6 +106,32 @@ class ExampleTest(unittest.TestCase):
             self.run_fr_lexer("fr_lexer_keywords_sample.fr.txt"),
             self.python_lexer_tokens(source),
         )
+
+    def test_fr_lexer_error_token_matches_python_bad_character_error(self) -> None:
+        """验证坏字符错误 Token 的核心消息和 Python Lexer 一致。"""
+        source = Path("examples/fr_lexer_bad_char_sample.fr.txt").read_text(
+            encoding="utf-8"
+        )
+        error_token = self.first_error_token("fr_lexer_bad_char_sample.fr.txt")
+
+        self.assertEqual(error_token["line"], 1)
+        self.assertEqual(error_token["column"], 1)
+        self.assertEqual(error_token["lexeme"], "@")
+        self.assertEqual(error_token["literal"], self.python_lexer_error_message(source))
+
+    def test_fr_lexer_error_token_matches_python_unterminated_string_error(self) -> None:
+        """验证未闭合字符串错误 Token 的核心消息和 Python Lexer 一致。"""
+        source = Path("examples/fr_lexer_unterminated_string_sample.fr.txt").read_text(
+            encoding="utf-8"
+        )
+        error_token = self.first_error_token(
+            "fr_lexer_unterminated_string_sample.fr.txt"
+        )
+
+        self.assertEqual(error_token["line"], 1)
+        self.assertEqual(error_token["column"], 1)
+        self.assertEqual(error_token["lexeme"], source)
+        self.assertEqual(error_token["literal"], self.python_lexer_error_message(source))
 
     def test_fr_lexer_demo_scans_keywords_strings_comments_and_symbols(self) -> None:
         """验证 FR 写的 Lexer demo 能扫描更接近真实 FR 源码的 Token。"""
@@ -137,7 +177,7 @@ class ExampleTest(unittest.TestCase):
         output = self.run_example("examples/fr_lexer_error_demo.fr")
 
         self.assertIn(
-            '{"type": "ERROR", "lexeme": "@", "literal": "无法识别的字符", "line": 1, "column": 1}',
+            '{"type": "ERROR", "lexeme": "@", "literal": "无法识别的字符：@", "line": 1, "column": 1}',
             output,
         )
         self.assertIn(
