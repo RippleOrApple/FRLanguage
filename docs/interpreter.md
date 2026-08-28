@@ -287,6 +287,7 @@ Map key 当前支持字符串、数字和布尔值。读取不存在的 key 会�
 - `isDigit(ch)`：判断单字符是否是数字。
 - `isAlpha(ch)`：判断单字符是否是字母或下划线。
 - `isAlphaNumeric(ch)`：判断单字符是否是字母、数字或下划线。
+- `codePoint(ch)`：返回单字符的 Unicode 编码值。
 - `type(value)`：返回 `nil`、`bool`、`number`、`string`、`list`、`map`、`function` 或 `future`。
 - `str(value)`：把值转换成字符串。
 - `number(value)`：把数字字符串转换成数字。
@@ -304,6 +305,7 @@ print(substring(text, 0, 2));
 print(isDigit("7"));
 print(isAlpha("F"));
 print(isAlphaNumeric("_"));
+print(codePoint("A"));
 
 let items = [1];
 print(push(items, 2));

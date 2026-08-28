@@ -50,3 +50,6 @@
 - 增加 `isDigit`、`isAlpha`、`isAlphaNumeric` 三个字符判断内置函数，并用测试覆盖正常分类和错误参数。
 - 删除 FR Lexer helper 中手写的 `isDigit`，让 demo 直接复用解释器内置能力。
 - 给示例目录中的 FR 函数补充简短注释，方便阅读示例时理解用途。
+- 增加 `codePoint(ch)`，让 FR 代码可以识别双引号、换行和制表符等字符。
+- 扩展 `examples/fr_lexer_demo.fr` 和 `examples/fr_lexer_helpers.fr`：现在能读取样例源码文件，跳过单行注释和空白，并识别关键字、字符串、数字、标识符、单字符符号和双字符比较符号。
+- 新增 `tests/test_examples.py`，用命令行入口验证 FR Lexer demo 的实际输出。

@@ -8,40 +8,32 @@ fn scan(source) {
   while current < len(source) {
     let ch = charAt(source, current);
 
-    if ch == " " {
+    if isWhitespace(ch) {
       current = current + 1;
     } else {
-      if ch == ";" {
-        addToken(tokens, "SEMICOLON", ch);
-        current = current + 1;
+      if ch == "/" and peekNext(source, current) == "/" {
+        current = skipLineComment(source, current + 2);
       } else {
-        if ch == "=" {
-          addToken(tokens, "EQUAL", ch);
-          current = current + 1;
+        if isQuote(ch) {
+          current = scanString(source, tokens, current);
         } else {
           if isDigit(ch) {
-            let start = current;
-            while current < len(source) {
-              let digit = charAt(source, current);
-              if isDigit(digit) {
-                current = current + 1;
-              } else {
-                break;
-              }
-            }
-            addToken(tokens, "NUMBER", substring(source, start, current));
+            current = scanNumber(source, tokens, current);
           } else {
-            let start = current;
-            while current < len(source) {
-              let part = charAt(source, current);
-              if part == " " or part == "=" or part == ";" {
-                break;
+            if isAlpha(ch) {
+              current = scanIdentifier(source, tokens, current);
+            } else {
+              let pairType = pairTokenType(source, current);
+              if pairType != "" {
+                addToken(tokens, pairType, substring(source, current, current + 2));
+                current = current + 2;
               } else {
+                let singleType = singleCharTokenType(ch);
+                if singleType != "" {
+                  addToken(tokens, singleType, ch);
+                }
                 current = current + 1;
               }
-            }
-            if start < current {
-              addToken(tokens, "IDENT", substring(source, start, current));
             }
           }
         }
@@ -53,4 +45,4 @@ fn scan(source) {
   return tokens;
 }
 
-print(scan("let answer = 42;"));
+print(scan(readFile("fr_lexer_sample.fr.txt")));

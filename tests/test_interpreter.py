@@ -450,6 +450,7 @@ class InterpreterTest(unittest.TestCase):
             print(isAlphaNumeric("7"));
             print(isAlphaNumeric("_"));
             print(isAlphaNumeric("-"));
+            print(codePoint("A"));
             """
         )
 
@@ -465,6 +466,7 @@ class InterpreterTest(unittest.TestCase):
                 "true",
                 "true",
                 "false",
+                "65",
             ],
         )
 
@@ -520,6 +522,9 @@ class InterpreterTest(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "isAlphaNumeric 参数必须是单字符字符串"):
             self.run_source('print(isAlphaNumeric(""));')
+
+        with self.assertRaisesRegex(RuntimeError, "codePoint 参数必须是单字符字符串"):
+            self.run_source('print(codePoint("AB"));')
 
     def test_builtin_read_file_reads_relative_text_file(self) -> None:
         with TemporaryDirectory() as directory:

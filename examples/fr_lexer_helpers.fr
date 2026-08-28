@@ -2,3 +2,220 @@
 fn addToken(tokens, kind, lexeme) {
   push(tokens, {"type": kind, "lexeme": lexeme});
 }
+
+// 判断字符是否是空格、换行、回车或制表符。
+fn isWhitespace(ch) {
+  let code = codePoint(ch);
+  return ch == " " or code == 10 or code == 13 or code == 9;
+}
+
+// 判断字符是否是换行或回车，用于结束单行注释。
+fn isLineBreak(ch) {
+  let code = codePoint(ch);
+  return code == 10 or code == 13;
+}
+
+// 判断字符是否是双引号。
+fn isQuote(ch) {
+  return codePoint(ch) == 34;
+}
+
+// 安全读取指定位置字符，越过末尾时返回空字符串。
+fn peek(source, current) {
+  if current >= len(source) {
+    return "";
+  }
+  return charAt(source, current);
+}
+
+// 安全读取当前位置后面的一个字符。
+fn peekNext(source, current) {
+  return peek(source, current + 1);
+}
+
+// 根据标识符文本判断它是否是关键字。
+fn keywordType(text) {
+  if text == "let" {
+    return "LET";
+  }
+  if text == "import" {
+    return "IMPORT";
+  }
+  if text == "fn" {
+    return "FN";
+  }
+  if text == "return" {
+    return "RETURN";
+  }
+  if text == "if" {
+    return "IF";
+  }
+  if text == "else" {
+    return "ELSE";
+  }
+  if text == "while" {
+    return "WHILE";
+  }
+  if text == "break" {
+    return "BREAK";
+  }
+  if text == "and" {
+    return "AND";
+  }
+  if text == "or" {
+    return "OR";
+  }
+  if text == "true" {
+    return "TRUE";
+  }
+  if text == "false" {
+    return "FALSE";
+  }
+  if text == "future" {
+    return "FUTURE";
+  }
+  if text == "await" {
+    return "AWAIT";
+  }
+  if text == "print" {
+    return "PRINT";
+  }
+  return "IDENT";
+}
+
+// 识别单字符符号对应的 Token 类型。
+fn singleCharTokenType(ch) {
+  if ch == "(" {
+    return "LEFT_PAREN";
+  }
+  if ch == ")" {
+    return "RIGHT_PAREN";
+  }
+  if ch == "{" {
+    return "LEFT_BRACE";
+  }
+  if ch == "}" {
+    return "RIGHT_BRACE";
+  }
+  if ch == "[" {
+    return "LEFT_BRACKET";
+  }
+  if ch == "]" {
+    return "RIGHT_BRACKET";
+  }
+  if ch == "," {
+    return "COMMA";
+  }
+  if ch == ":" {
+    return "COLON";
+  }
+  if ch == "." {
+    return "DOT";
+  }
+  if ch == "-" {
+    return "MINUS";
+  }
+  if ch == "+" {
+    return "PLUS";
+  }
+  if ch == ";" {
+    return "SEMICOLON";
+  }
+  if ch == "*" {
+    return "STAR";
+  }
+  if ch == "/" {
+    return "SLASH";
+  }
+  if ch == "!" {
+    return "BANG";
+  }
+  if ch == "=" {
+    return "EQUAL";
+  }
+  if ch == "<" {
+    return "LESS";
+  }
+  if ch == ">" {
+    return "GREATER";
+  }
+  return "";
+}
+
+// 识别两个字符组成的比较运算符。
+fn pairTokenType(source, current) {
+  let ch = peek(source, current);
+  let next = peekNext(source, current);
+  if ch == "!" and next == "=" {
+    return "BANG_EQUAL";
+  }
+  if ch == "=" and next == "=" {
+    return "EQUAL_EQUAL";
+  }
+  if ch == "<" and next == "=" {
+    return "LESS_EQUAL";
+  }
+  if ch == ">" and next == "=" {
+    return "GREATER_EQUAL";
+  }
+  return "";
+}
+
+// 从当前位置跳过一整段单行注释。
+fn skipLineComment(source, current) {
+  while current < len(source) {
+    let ch = charAt(source, current);
+    if isLineBreak(ch) {
+      break;
+    }
+    current = current + 1;
+  }
+  return current;
+}
+
+// 判断当前位置是否开始进入数字的小数部分。
+fn hasFractionPart(source, current) {
+  return current + 1 < len(source) and charAt(source, current) == "." and isDigit(charAt(source, current + 1));
+}
+
+// 从当前位置扫描字符串字面量，并返回新的扫描位置。
+fn scanString(source, tokens, current) {
+  let start = current;
+  current = current + 1;
+  while current < len(source) {
+    let ch = charAt(source, current);
+    current = current + 1;
+    if isQuote(ch) {
+      break;
+    }
+  }
+  addToken(tokens, "STRING", substring(source, start, current));
+  return current;
+}
+
+// 从当前位置扫描数字字面量，并返回新的扫描位置。
+fn scanNumber(source, tokens, current) {
+  let start = current;
+  while current < len(source) and isDigit(charAt(source, current)) {
+    current = current + 1;
+  }
+  if hasFractionPart(source, current) {
+    current = current + 1;
+    while current < len(source) and isDigit(charAt(source, current)) {
+      current = current + 1;
+    }
+  }
+  addToken(tokens, "NUMBER", substring(source, start, current));
+  return current;
+}
+
+// 从当前位置扫描标识符或关键字，并返回新的扫描位置。
+fn scanIdentifier(source, tokens, current) {
+  let start = current;
+  while current < len(source) and isAlphaNumeric(charAt(source, current)) {
+    current = current + 1;
+  }
+  let text = substring(source, start, current);
+  addToken(tokens, keywordType(text), text);
+  return current;
+}

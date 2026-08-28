@@ -12,6 +12,7 @@ FR 现在已经具备一批写 Lexer demo 需要的基础能力：
 - `charAt`：逐字符扫描源码。
 - `substring`：截取词素。
 - `isDigit` / `isAlpha` / `isAlphaNumeric`：判断字符类别。
+- `codePoint`：识别换行、制表符和双引号这类不方便直接写进字符串的字符。
 - `push`：向 Token 列表追加元素。
 - `readFile`：读取源码文本。
 - `import`：把工具函数拆到单独 `.fr` 文件。
@@ -28,24 +29,30 @@ FR 现在已经具备一批写 Lexer demo 需要的基础能力：
 ```txt
 examples/fr_lexer_demo.fr
 examples/fr_lexer_helpers.fr
+examples/fr_lexer_sample.fr.txt
 ```
 
-它扫描这段源码：
+它读取并扫描这段源码：
 
 ```fr
-let answer = 42;
+// demo comment
+let name = "FR";
+if name == "FR" {
+  print(name);
+}
 ```
 
-输出 Token 列表：
+输出的 Token 列表会包含关键字、标识符、字符串、比较运算符、括号和 EOF，例如：
 
 ```txt
-[{"type": "IDENT", "lexeme": "let"}, {"type": "IDENT", "lexeme": "answer"}, {"type": "EQUAL", "lexeme": "="}, {"type": "NUMBER", "lexeme": "42"}, {"type": "SEMICOLON", "lexeme": ";"}, {"type": "EOF", "lexeme": ""}]
+[{"type": "LET", "lexeme": "let"}, {"type": "IDENT", "lexeme": "name"}, ... {"type": "EOF", "lexeme": ""}]
 ```
 
 ## 这个 demo 的限制
 
-- 只处理空格，不处理换行和注释。
-- 标识符、关键字和数字扫描都很粗糙。
+- 只输出 `type` 和 `lexeme`，还没有记录 literal、行号和列号。
+- 字符串扫描还没有错误处理，遇到未闭合字符串时不会给出清楚错误。
+- 未识别字符现在会被跳过，还没有错误 Token 或诊断信息。
 - 模块系统还没有命名空间和导出控制。
 
 ## 下一步建议
@@ -53,6 +60,6 @@ let answer = 42;
 优先补：
 
 - 模块命名空间和导出控制：避免导入文件里的名字全部进入当前环境。
-- 更完整的 FR Lexer：让 demo 识别关键字、换行、注释和更多运算符。
+- 更完整的 FR Lexer：补 literal、行列号和未识别字符错误。
 
 这些能力完成后，可以把 `fr_lexer_demo.fr` 扩展成真正的 `fr_lexer.fr`。

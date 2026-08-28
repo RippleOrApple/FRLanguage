@@ -107,6 +107,7 @@ print(user["name"]);
 - `isDigit(ch)`
 - `isAlpha(ch)`
 - `isAlphaNumeric(ch)`
+- `codePoint(ch)`
 - `push(list, value)`
 - `pop(list)`
 
@@ -117,6 +118,7 @@ let text = "hello";
 print(len(text));
 print(charAt(text, 1));
 print(isAlphaNumeric("_"));
+print(codePoint("A"));
 ```
 
 阶段产出：

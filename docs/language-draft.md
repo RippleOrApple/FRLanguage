@@ -113,6 +113,7 @@ print(substring(text, 1, 4));
 print(isDigit("7"));
 print(isAlpha("F"));
 print(isAlphaNumeric("_"));
+print(codePoint("A"));
 ```
 
 类型和转换：

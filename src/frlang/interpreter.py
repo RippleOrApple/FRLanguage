@@ -482,6 +482,7 @@ class Interpreter:
             FRNativeFunction("isDigit", 1, Interpreter.native_is_digit),
             FRNativeFunction("isAlpha", 1, Interpreter.native_is_alpha),
             FRNativeFunction("isAlphaNumeric", 1, Interpreter.native_is_alpha_numeric),
+            FRNativeFunction("codePoint", 1, Interpreter.native_code_point),
             FRNativeFunction("type", 1, Interpreter.native_type),
             FRNativeFunction("str", 1, Interpreter.native_str),
             FRNativeFunction("number", 1, Interpreter.native_number),
@@ -570,6 +571,16 @@ class Interpreter:
             [ch],
             token,
         ) or Interpreter.native_is_digit(interpreter, [ch], token)
+
+    @staticmethod
+    def native_code_point(
+        interpreter: "Interpreter",
+        arguments: list[Any],
+        token: Token,
+    ) -> int:
+        """实现 `codePoint(ch)`：返回单字符的 Unicode 编码值。"""
+        ch = interpreter.require_single_character(arguments[0], token, "codePoint")
+        return ord(ch)
 
     @staticmethod
     def native_type(
