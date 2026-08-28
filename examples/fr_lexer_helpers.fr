@@ -1,6 +1,30 @@
-// 向 Token 列表追加一个简化的 Token 记录。
-fn addToken(tokens, kind, lexeme) {
-  push(tokens, {"type": kind, "lexeme": lexeme});
+// 创建扫描器状态，集中保存源码、游标、行列号和 Token 列表。
+fn createScanner(source) {
+  return {"source": source, "tokens": [], "current": 0, "line": 1, "column": 1};
+}
+
+// 判断扫描器是否已经读到源码末尾。
+fn isAtEnd(scanner) {
+  return scanner["current"] >= len(scanner["source"]);
+}
+
+// 向 Token 列表追加一条完整 Token 记录。
+fn addToken(scanner, kind, lexeme, literal, line, column) {
+  let token = {"type": kind, "lexeme": lexeme, "literal": literal};
+  token["line"] = line;
+  token["column"] = column;
+  push(scanner["tokens"], token);
+}
+
+// 向 Token 列表追加没有 literal 的 Token。
+fn addSimpleToken(scanner, kind, lexeme, line, column) {
+  let literal;
+  addToken(scanner, kind, lexeme, literal, line, column);
+}
+
+// 向 Token 列表追加一个错误 Token。
+fn addErrorToken(scanner, lexeme, message, line, column) {
+  addToken(scanner, "ERROR", lexeme, message, line, column);
 }
 
 // 判断字符是否是空格、换行、回车或制表符。
@@ -20,17 +44,34 @@ fn isQuote(ch) {
   return codePoint(ch) == 34;
 }
 
-// 安全读取指定位置字符，越过末尾时返回空字符串。
-fn peek(source, current) {
-  if current >= len(source) {
+// 查看当前字符但不推进扫描器。
+fn peekChar(scanner) {
+  if isAtEnd(scanner) {
     return "";
   }
-  return charAt(source, current);
+  return charAt(scanner["source"], scanner["current"]);
 }
 
-// 安全读取当前位置后面的一个字符。
-fn peekNext(source, current) {
-  return peek(source, current + 1);
+// 查看当前字符后面的一个字符。
+fn peekNextChar(scanner) {
+  let next = scanner["current"] + 1;
+  if next >= len(scanner["source"]) {
+    return "";
+  }
+  return charAt(scanner["source"], next);
+}
+
+// 消费当前字符，并同步更新游标和行列号。
+fn advance(scanner) {
+  let ch = charAt(scanner["source"], scanner["current"]);
+  scanner["current"] = scanner["current"] + 1;
+  if codePoint(ch) == 10 {
+    scanner["line"] = scanner["line"] + 1;
+    scanner["column"] = 1;
+  } else {
+    scanner["column"] = scanner["column"] + 1;
+  }
+  return ch;
 }
 
 // 根据标识符文本判断它是否是关键字。
@@ -81,6 +122,18 @@ fn keywordType(text) {
     return "PRINT";
   }
   return "IDENT";
+}
+
+// 根据关键字文本返回对应 literal；没有 literal 时返回 nil。
+fn keywordLiteral(text) {
+  if text == "true" {
+    return true;
+  }
+  if text == "false" {
+    return false;
+  }
+  let literal;
+  return literal;
 }
 
 // 识别单字符符号对应的 Token 类型。
@@ -142,80 +195,142 @@ fn singleCharTokenType(ch) {
   return "";
 }
 
-// 识别两个字符组成的比较运算符。
-fn pairTokenType(source, current) {
-  let ch = peek(source, current);
-  let next = peekNext(source, current);
+// 识别并消费两个字符组成的比较运算符。
+fn pairTokenType(scanner, ch) {
+  let next = peekChar(scanner);
   if ch == "!" and next == "=" {
+    advance(scanner);
     return "BANG_EQUAL";
   }
   if ch == "=" and next == "=" {
+    advance(scanner);
     return "EQUAL_EQUAL";
   }
   if ch == "<" and next == "=" {
+    advance(scanner);
     return "LESS_EQUAL";
   }
   if ch == ">" and next == "=" {
+    advance(scanner);
     return "GREATER_EQUAL";
   }
   return "";
 }
 
 // 从当前位置跳过一整段单行注释。
-fn skipLineComment(source, current) {
-  while current < len(source) {
-    let ch = charAt(source, current);
-    if isLineBreak(ch) {
+fn skipLineComment(scanner) {
+  while !isAtEnd(scanner) {
+    if isLineBreak(peekChar(scanner)) {
       break;
     }
-    current = current + 1;
+    advance(scanner);
   }
-  return current;
 }
 
 // 判断当前位置是否开始进入数字的小数部分。
-fn hasFractionPart(source, current) {
-  return current + 1 < len(source) and charAt(source, current) == "." and isDigit(charAt(source, current + 1));
+fn hasFractionPart(scanner) {
+  return peekChar(scanner) == "." and isDigit(peekNextChar(scanner));
 }
 
-// 从当前位置扫描字符串字面量，并返回新的扫描位置。
-fn scanString(source, tokens, current) {
-  let start = current;
-  current = current + 1;
-  while current < len(source) {
-    let ch = charAt(source, current);
-    current = current + 1;
-    if isQuote(ch) {
-      break;
+// 从当前位置继续扫描字符串字面量。
+fn scanString(scanner, start, line, column) {
+  let contentStart = scanner["current"];
+  while !isAtEnd(scanner) and !isQuote(peekChar(scanner)) {
+    advance(scanner);
+  }
+
+  if isAtEnd(scanner) {
+    let lexeme = substring(scanner["source"], start, scanner["current"]);
+    addErrorToken(scanner, lexeme, "字符串没有结束", line, column);
+    return;
+  }
+
+  advance(scanner);
+  let lexeme = substring(scanner["source"], start, scanner["current"]);
+  let literal = substring(scanner["source"], contentStart, scanner["current"] - 1);
+  addToken(scanner, "STRING", lexeme, literal, line, column);
+}
+
+// 从当前位置继续扫描数字字面量。
+fn scanNumber(scanner, start, line, column) {
+  while !isAtEnd(scanner) and isDigit(peekChar(scanner)) {
+    advance(scanner);
+  }
+  if hasFractionPart(scanner) {
+    advance(scanner);
+    while !isAtEnd(scanner) and isDigit(peekChar(scanner)) {
+      advance(scanner);
     }
   }
-  addToken(tokens, "STRING", substring(source, start, current));
-  return current;
+  let lexeme = substring(scanner["source"], start, scanner["current"]);
+  addToken(scanner, "NUMBER", lexeme, number(lexeme), line, column);
 }
 
-// 从当前位置扫描数字字面量，并返回新的扫描位置。
-fn scanNumber(source, tokens, current) {
-  let start = current;
-  while current < len(source) and isDigit(charAt(source, current)) {
-    current = current + 1;
+// 从当前位置继续扫描标识符或关键字。
+fn scanIdentifier(scanner, start, line, column) {
+  while !isAtEnd(scanner) and isAlphaNumeric(peekChar(scanner)) {
+    advance(scanner);
   }
-  if hasFractionPart(source, current) {
-    current = current + 1;
-    while current < len(source) and isDigit(charAt(source, current)) {
-      current = current + 1;
-    }
-  }
-  addToken(tokens, "NUMBER", substring(source, start, current));
-  return current;
+  let text = substring(scanner["source"], start, scanner["current"]);
+  addToken(scanner, keywordType(text), text, keywordLiteral(text), line, column);
 }
 
-// 从当前位置扫描标识符或关键字，并返回新的扫描位置。
-fn scanIdentifier(source, tokens, current) {
-  let start = current;
-  while current < len(source) and isAlphaNumeric(charAt(source, current)) {
-    current = current + 1;
+// 扫描一个 Token，并根据字符类型分派给不同 helper。
+fn scanToken(scanner) {
+  let start = scanner["current"];
+  let line = scanner["line"];
+  let column = scanner["column"];
+  let ch = advance(scanner);
+
+  if isWhitespace(ch) {
+    return;
   }
-  let text = substring(source, start, current);
-  addToken(tokens, keywordType(text), text);
-  return current;
+
+  if ch == "/" and peekChar(scanner) == "/" {
+    advance(scanner);
+    skipLineComment(scanner);
+    return;
+  }
+
+  if isQuote(ch) {
+    scanString(scanner, start, line, column);
+    return;
+  }
+
+  if isDigit(ch) {
+    scanNumber(scanner, start, line, column);
+    return;
+  }
+
+  if isAlpha(ch) {
+    scanIdentifier(scanner, start, line, column);
+    return;
+  }
+
+  let pairType = pairTokenType(scanner, ch);
+  if pairType != "" {
+    let lexeme = substring(scanner["source"], start, scanner["current"]);
+    addSimpleToken(scanner, pairType, lexeme, line, column);
+    return;
+  }
+
+  let singleType = singleCharTokenType(ch);
+  if singleType != "" {
+    addSimpleToken(scanner, singleType, ch, line, column);
+    return;
+  }
+
+  addErrorToken(scanner, ch, "无法识别的字符", line, column);
+}
+
+// 扫描一段源码字符串，返回完整的 Token 列表。
+fn scan(source) {
+  let scanner = createScanner(source);
+
+  while !isAtEnd(scanner) {
+    scanToken(scanner);
+  }
+
+  addSimpleToken(scanner, "EOF", "", scanner["line"], scanner["column"]);
+  return scanner["tokens"];
 }

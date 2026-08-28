@@ -28,7 +28,9 @@ FR 现在已经具备一批写 Lexer demo 需要的基础能力：
 
 ```txt
 examples/fr_lexer_demo.fr
+examples/fr_lexer_error_demo.fr
 examples/fr_lexer_helpers.fr
+examples/fr_lexer_error_sample.fr.txt
 examples/fr_lexer_sample.fr.txt
 ```
 
@@ -42,17 +44,19 @@ if name == "FR" {
 }
 ```
 
-输出的 Token 列表会包含关键字、标识符、字符串、比较运算符、括号和 EOF，例如：
+输出的 Token 列表会包含关键字、标识符、字符串、比较运算符、括号、literal、行列号和 EOF，例如：
 
 ```txt
-[{"type": "LET", "lexeme": "let"}, {"type": "IDENT", "lexeme": "name"}, ... {"type": "EOF", "lexeme": ""}]
+[{"type": "LET", "lexeme": "let", "literal": nil, "line": 2, "column": 1}, ...]
 ```
+
+错误样例会输出 `ERROR` Token，用来展示未识别字符和未闭合字符串的处理方式。
 
 ## 这个 demo 的限制
 
-- 只输出 `type` 和 `lexeme`，还没有记录 literal、行号和列号。
-- 字符串扫描还没有错误处理，遇到未闭合字符串时不会给出清楚错误。
-- 未识别字符现在会被跳过，还没有错误 Token 或诊断信息。
+- 还没有和 Python Lexer 做逐项对齐测试。
+- 字符串扫描只处理最简单的双引号字符串，还没有转义字符。
+- 错误处理先用 `ERROR` Token 表达，还没有停止扫描或汇总诊断。
 - 模块系统还没有命名空间和导出控制。
 
 ## 下一步建议
@@ -60,6 +64,6 @@ if name == "FR" {
 优先补：
 
 - 模块命名空间和导出控制：避免导入文件里的名字全部进入当前环境。
-- 更完整的 FR Lexer：补 literal、行列号和未识别字符错误。
+- 更完整的 FR Lexer：和 Python Lexer 对齐更多样例，补转义字符串或错误汇总。
 
 这些能力完成后，可以把 `fr_lexer_demo.fr` 扩展成真正的 `fr_lexer.fr`。

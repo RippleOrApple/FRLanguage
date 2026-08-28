@@ -62,6 +62,7 @@ $env:PYTHONPATH='src'; python -m frlang.main examples/list.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/map.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/builtins.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_demo.fr
+$env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_error_demo.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/function.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/recursion.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/future.fr

@@ -53,3 +53,7 @@
 - 增加 `codePoint(ch)`，让 FR 代码可以识别双引号、换行和制表符等字符。
 - 扩展 `examples/fr_lexer_demo.fr` 和 `examples/fr_lexer_helpers.fr`：现在能读取样例源码文件，跳过单行注释和空白，并识别关键字、字符串、数字、标识符、单字符符号和双字符比较符号。
 - 新增 `tests/test_examples.py`，用命令行入口验证 FR Lexer demo 的实际输出。
+- 重构 FR Lexer demo 的 helper：使用 scanner Map 统一保存源码、当前游标、行列号和 Token 列表。
+- FR Lexer demo 的 Token 现在包含 `type`、`lexeme`、`literal`、`line`、`column`。
+- 新增 `examples/fr_lexer_error_demo.fr` 和错误样例文件，展示未识别字符和未闭合字符串会输出 `ERROR` Token。
+- 把 FR Lexer demo 的 `scan(source)` 入口移动到 helper 中，让正常样例和错误样例复用同一套扫描逻辑。
