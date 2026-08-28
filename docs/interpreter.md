@@ -284,6 +284,9 @@ Map key 当前支持字符串、数字和布尔值。读取不存在的 key 会�
 - `len(value)`：读取字符串、List 或 Map 的长度。
 - `charAt(text, index)`：读取字符串指定位置的字符。
 - `substring(text, start, end)`：读取字符串片段，包含 `start`，不包含 `end`。
+- `isDigit(ch)`：判断单字符是否是数字。
+- `isAlpha(ch)`：判断单字符是否是字母或下划线。
+- `isAlphaNumeric(ch)`：判断单字符是否是字母、数字或下划线。
 - `type(value)`：返回 `nil`、`bool`、`number`、`string`、`list`、`map`、`function` 或 `future`。
 - `str(value)`：把值转换成字符串。
 - `number(value)`：把数字字符串转换成数字。
@@ -298,6 +301,9 @@ let text = "FRLanguage";
 print(len(text));
 print(charAt(text, 2));
 print(substring(text, 0, 2));
+print(isDigit("7"));
+print(isAlpha("F"));
+print(isAlphaNumeric("_"));
 
 let items = [1];
 print(push(items, 2));

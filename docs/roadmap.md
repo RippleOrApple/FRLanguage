@@ -104,6 +104,9 @@ print(user["name"]);
 - `type(value)`
 - `substring(text, start, end)`
 - `charAt(text, index)`
+- `isDigit(ch)`
+- `isAlpha(ch)`
+- `isAlphaNumeric(ch)`
 - `push(list, value)`
 - `pop(list)`
 
@@ -113,6 +116,7 @@ print(user["name"]);
 let text = "hello";
 print(len(text));
 print(charAt(text, 1));
+print(isAlphaNumeric("_"));
 ```
 
 阶段产出：
@@ -124,6 +128,7 @@ print(charAt(text, 1));
 
 - 字符串和 List 的常用操作都能用。
 - 内置函数参数错误有清楚提示。
+- FR Lexer demo 可以直接复用字符判断函数，不必在示例里手写数字判断。
 
 ## 阶段 4：文件 IO 和模块系统
 

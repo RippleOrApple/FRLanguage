@@ -1,3 +1,4 @@
+// 创建一个稍后求值的 Future，用来展示 await 的基本用法。
 fn delayValue(x) {
   return future {
     return x * 2;

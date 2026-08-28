@@ -479,6 +479,9 @@ class Interpreter:
             FRNativeFunction("len", 1, Interpreter.native_len),
             FRNativeFunction("charAt", 2, Interpreter.native_char_at),
             FRNativeFunction("substring", 3, Interpreter.native_substring),
+            FRNativeFunction("isDigit", 1, Interpreter.native_is_digit),
+            FRNativeFunction("isAlpha", 1, Interpreter.native_is_alpha),
+            FRNativeFunction("isAlphaNumeric", 1, Interpreter.native_is_alpha_numeric),
             FRNativeFunction("type", 1, Interpreter.native_type),
             FRNativeFunction("str", 1, Interpreter.native_str),
             FRNativeFunction("number", 1, Interpreter.native_number),
@@ -533,6 +536,40 @@ class Interpreter:
         if start < 0 or end < start or end > len(text):
             interpreter.raise_runtime_error(token, "substring 范围越界")
         return text[start:end]
+
+    @staticmethod
+    def native_is_digit(
+        interpreter: "Interpreter",
+        arguments: list[Any],
+        token: Token,
+    ) -> bool:
+        """实现 `isDigit(ch)`：判断单字符是否是 0 到 9。"""
+        ch = interpreter.require_single_character(arguments[0], token, "isDigit")
+        return "0" <= ch <= "9"
+
+    @staticmethod
+    def native_is_alpha(
+        interpreter: "Interpreter",
+        arguments: list[Any],
+        token: Token,
+    ) -> bool:
+        """实现 `isAlpha(ch)`：判断单字符是否是字母或下划线。"""
+        ch = interpreter.require_single_character(arguments[0], token, "isAlpha")
+        return ("a" <= ch <= "z") or ("A" <= ch <= "Z") or ch == "_"
+
+    @staticmethod
+    def native_is_alpha_numeric(
+        interpreter: "Interpreter",
+        arguments: list[Any],
+        token: Token,
+    ) -> bool:
+        """实现 `isAlphaNumeric(ch)`：判断单字符是否适合组成标识符。"""
+        ch = interpreter.require_single_character(arguments[0], token, "isAlphaNumeric")
+        return Interpreter.native_is_alpha(
+            interpreter,
+            [ch],
+            token,
+        ) or Interpreter.native_is_digit(interpreter, [ch], token)
 
     @staticmethod
     def native_type(
@@ -642,6 +679,12 @@ class Interpreter:
         except ValueError:
             self.raise_runtime_error(token, f"{label} 不能读取工作目录外的文件")
         return target_path
+
+    def require_single_character(self, value: Any, token: Token, name: str) -> str:
+        """检查内置函数参数是否为长度为 1 的字符串，并返回该字符。"""
+        if not isinstance(value, str) or len(value) != 1:
+            self.raise_runtime_error(token, f"{name} 参数必须是单字符字符串")
+        return value
 
     @staticmethod
     def stringify(value: Any) -> str:

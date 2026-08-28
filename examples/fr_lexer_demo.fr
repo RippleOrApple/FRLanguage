@@ -1,5 +1,6 @@
 import "fr_lexer_helpers.fr";
 
+// 扫描一段源码字符串，返回简化 Token 列表。
 fn scan(source) {
   let tokens = [];
   let current = 0;

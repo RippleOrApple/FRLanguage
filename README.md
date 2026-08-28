@@ -30,7 +30,7 @@ FRLanguage 是一个使用 Python 编写的教学型小语言项目。目标不�
 - List：`[1, 2, 3]`
 - 索引读取和赋值：`items[0]`、`items[1] = 42`
 - Map：`{"name": "FR"}`
-- 内置函数：`len(value)`、`charAt(text, index)`、`substring(text, start, end)`
+- 内置函数：`len(value)`、`charAt(text, index)`、`substring(text, start, end)`、`isDigit(ch)`、`isAlpha(ch)`、`isAlphaNumeric(ch)`
 - 类型和转换：`type(value)`、`str(value)`、`number(value)`
 - List 修改：`push(list, value)`、`pop(list)`
 - 文件读取：`readFile("相对路径")`

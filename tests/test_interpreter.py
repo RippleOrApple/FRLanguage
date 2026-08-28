@@ -427,6 +427,7 @@ class InterpreterTest(unittest.TestCase):
         self.assertEqual(interpreter.output, ["5", "3", "2"])
 
     def test_builtin_string_helpers_read_text_parts(self) -> None:
+        """验证字符串截取类内置函数能读取字符和片段。"""
         interpreter = self.run_source(
             """
             print(charAt("hello", 1));
@@ -436,7 +437,39 @@ class InterpreterTest(unittest.TestCase):
 
         self.assertEqual(interpreter.output, ["e", "ell"])
 
+    def test_builtin_character_predicates_classify_single_characters(self) -> None:
+        """验证字符判断内置函数能识别数字、字母、下划线和其他字符。"""
+        interpreter = self.run_source(
+            """
+            print(isDigit("7"));
+            print(isDigit("a"));
+            print(isAlpha("a"));
+            print(isAlpha("_"));
+            print(isAlpha("7"));
+            print(isAlphaNumeric("a"));
+            print(isAlphaNumeric("7"));
+            print(isAlphaNumeric("_"));
+            print(isAlphaNumeric("-"));
+            """
+        )
+
+        self.assertEqual(
+            interpreter.output,
+            [
+                "true",
+                "false",
+                "true",
+                "true",
+                "false",
+                "true",
+                "true",
+                "true",
+                "false",
+            ],
+        )
+
     def test_builtin_type_str_and_number_convert_values(self) -> None:
+        """验证类型查询、字符串转换和数字转换内置函数。"""
         interpreter = self.run_source(
             """
             let missing;
@@ -469,6 +502,7 @@ class InterpreterTest(unittest.TestCase):
         self.assertEqual(interpreter.output, ["2", "[1, 2]", "2", "[1]"])
 
     def test_builtin_reports_argument_type_errors(self) -> None:
+        """验证内置函数遇到错误参数时会给出运行时错误。"""
         with self.assertRaisesRegex(RuntimeError, "len 参数必须是字符串、List 或 Map"):
             self.run_source("print(len(1));")
 
@@ -477,6 +511,15 @@ class InterpreterTest(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "number 无法转换这个字符串"):
             self.run_source('print(number("abc"));')
+
+        with self.assertRaisesRegex(RuntimeError, "isDigit 参数必须是单字符字符串"):
+            self.run_source("print(isDigit(1));")
+
+        with self.assertRaisesRegex(RuntimeError, "isAlpha 参数必须是单字符字符串"):
+            self.run_source('print(isAlpha("ab"));')
+
+        with self.assertRaisesRegex(RuntimeError, "isAlphaNumeric 参数必须是单字符字符串"):
+            self.run_source('print(isAlphaNumeric(""));')
 
     def test_builtin_read_file_reads_relative_text_file(self) -> None:
         with TemporaryDirectory() as directory:

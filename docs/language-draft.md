@@ -110,6 +110,9 @@ let text = "hello";
 print(len(text));
 print(charAt(text, 1));
 print(substring(text, 1, 4));
+print(isDigit("7"));
+print(isAlpha("F"));
+print(isAlphaNumeric("_"));
 ```
 
 类型和转换：

@@ -47,3 +47,6 @@
 - 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：67 个测试通过。
 - 为导入文件中的语言错误补充上下文，例如 `导入 "helper.fr" 时出错：...`。
 - 新增解释器和 CLI 测试，覆盖导入文件内部运行时错误的报错信息。
+- 增加 `isDigit`、`isAlpha`、`isAlphaNumeric` 三个字符判断内置函数，并用测试覆盖正常分类和错误参数。
+- 删除 FR Lexer helper 中手写的 `isDigit`，让 demo 直接复用解释器内置能力。
+- 给示例目录中的 FR 函数补充简短注释，方便阅读示例时理解用途。
