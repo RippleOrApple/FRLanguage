@@ -57,6 +57,7 @@ add(1);
 - Map 字典
 - 索引读取
 - 索引赋值
+- `nil` 空值字面量
 - 逻辑运算符 `and` / `or`
 - `break` 跳出循环
 
@@ -104,8 +105,13 @@ print(user["name"]);
 - `type(value)`
 - `substring(text, start, end)`
 - `charAt(text, index)`
+- `isDigit(ch)`
+- `isAlpha(ch)`
+- `isAlphaNumeric(ch)`
+- `codePoint(ch)`
 - `push(list, value)`
 - `pop(list)`
+- 字符串转义：`\"`、`\\`、`\n`、`\t`、`\r`
 
 示例：
 
@@ -113,17 +119,21 @@ print(user["name"]);
 let text = "hello";
 print(len(text));
 print(charAt(text, 1));
+print(isAlphaNumeric("_"));
+print(codePoint("A"));
 ```
 
 阶段产出：
 
 - FR 能处理字符串扫描。
 - FR 能实现简单 Lexer demo。
+- Python Lexer 和 FR Lexer demo 能在转义字符串样例上保持一致。
 
 完成标准：
 
 - 字符串和 List 的常用操作都能用。
 - 内置函数参数错误有清楚提示。
+- FR Lexer demo 可以直接复用字符判断函数，不必在示例里手写数字判断。
 
 ## 阶段 4：文件 IO 和模块系统
 
@@ -136,17 +146,19 @@ let source = readFile("hello.fr");
 print(source);
 ```
 
-后续再做模块系统：
+当前已完成最小模块导入：
 
 ```fr
 import "lexer.fr";
 ```
 
+后续再扩展完整模块系统。
+
 需要注意：
 
 - 文件路径应限制在项目可控范围内。
 - 模块导入需要避免重复执行。
-- 错误信息要显示导入链。
+- 错误信息要显示导入上下文。
 
 阶段产出：
 
@@ -157,6 +169,7 @@ import "lexer.fr";
 
 - `readFile` 有测试。
 - `import` 有重复导入和路径错误测试。
+- 导入文件出错时能看到是哪个导入触发的。
 
 ## 阶段 5：更完整的 Future 和 Runtime
 
@@ -311,6 +324,8 @@ fr_lexer.fr
 
 - `fr_lexer.fr` 能扫描一小部分 FR 源码。
 - Python Lexer 和 FR Lexer 在测试样例上结果一致。
+- 对照测试应逐步覆盖基础源码、关键字、集合字面量、运算符和错误场景。
+- 在 FR 没有异常机制前，词法错误可以先用 `ERROR` Token 表达。
 
 ## 阶段 9：自举解释器
 

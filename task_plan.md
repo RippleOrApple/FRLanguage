@@ -15,6 +15,17 @@
 - [x] 阶段 6：增加 `and` / `or` 短路逻辑运算。
 - [x] 阶段 7：增加 `break` 跳出循环能力。
 - [x] 阶段 8：用新语法清理 FR Lexer demo，更新文档并验证。
+- [x] 阶段 9：实现最小 `import "文件.fr";` 模块导入。
+- [x] 阶段 10：拆分 FR Lexer demo helper，更新文档并验证。
+- [x] 阶段 11：给核心源码补充学习型函数说明。
+- [x] 阶段 12：给 import 失败补充导入上下文。
+- [x] 阶段 13：增加字符判断内置函数，简化 FR Lexer demo。
+- [x] 阶段 14：扩展 FR Lexer demo，支持关键字、字符串、注释、空白和更多符号。
+- [x] 阶段 15：让 FR Lexer demo 输出 literal、行列号和错误 Token。
+- [x] 阶段 16：增加 Python Lexer 与 FR Lexer 的结构化对照测试。
+- [x] 阶段 17：增加 FR Lexer 错误 Token 与 Python Lexer 错误信息的对照测试。
+- [x] 阶段 18：增加字符串转义支持，并让 Python Lexer、解释器和 FR Lexer demo 行为对齐。
+- [x] 阶段 19：增加显式 `nil` 字面量，并同步 Python 语言链路和 FR Lexer demo。
 
 ## 决策
 

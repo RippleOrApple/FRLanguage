@@ -10,7 +10,10 @@ from .parser import Parser
 
 
 def run_source(source: str, base_path: Path | str | None = None) -> list[str]:
-    """运行源码并返回输出行。"""
+    """运行源码并返回输出行。
+
+    `base_path` 会传给解释器，用作 `readFile` 和 `import` 的相对路径起点。
+    """
     tokens = Lexer(source).scan_tokens()
     program = Parser(tokens).parse()
     interpreter = Interpreter(base_path=base_path)
@@ -19,7 +22,10 @@ def run_source(source: str, base_path: Path | str | None = None) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> None:
-    """运行 FRLanguage 命令行程序。"""
+    """运行 FRLanguage 命令行程序。
+
+    命令行只接收一个 `.fr` 文件路径，读取源码后交给 `run_source` 执行。
+    """
     args = sys.argv[1:] if argv is None else argv
     if len(args) != 1:
         print("用法：frlang <文件路径>", file=sys.stderr)

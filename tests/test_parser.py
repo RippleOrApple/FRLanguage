@@ -17,6 +17,7 @@ from frlang.token import Token, TokenType
 
 class ParserTest(unittest.TestCase):
     def parse_source(self, source: str) -> Program:
+        """把源码走完 Lexer 和 Parser，返回解析后的 Program。"""
         return Parser(Lexer(source).scan_tokens()).parse()
 
     def test_empty_tokens_parse_to_empty_program(self) -> None:
@@ -46,6 +47,15 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(
             program,
             Program(statements=[PrintStmt(expression=LiteralExpr("hello"))]),
+        )
+
+    def test_parses_nil_literal(self) -> None:
+        """验证 nil 会被解析成值为 None 的字面量表达式。"""
+        program = self.parse_source("print(nil);")
+
+        self.assertEqual(
+            program,
+            Program(statements=[PrintStmt(expression=LiteralExpr(None))]),
         )
 
     def test_parses_expression_precedence(self) -> None:

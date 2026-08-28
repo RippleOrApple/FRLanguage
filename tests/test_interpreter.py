@@ -12,6 +12,7 @@ from frlang.parser import Parser
 
 class InterpreterTest(unittest.TestCase):
     def run_source(self, source: str, **interpreter_options: Any) -> Interpreter:
+        """运行一段 FR 源码，并返回执行后的解释器对象。"""
         tokens = Lexer(source).scan_tokens()
         program = Parser(tokens).parse()
         interpreter = Interpreter(**interpreter_options)
@@ -41,6 +42,18 @@ class InterpreterTest(unittest.TestCase):
         )
 
         self.assertEqual(interpreter.output, ["-9", "true", "true"])
+
+    def test_runs_nil_literal(self) -> None:
+        """验证源码可以直接写 nil，并按空值参与输出和比较。"""
+        interpreter = self.run_source(
+            """
+            print(nil);
+            print(nil == nil);
+            print(!nil);
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["nil", "true", "true"])
 
     def test_raises_runtime_error_for_undefined_variable(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "变量 missing 未定义"):
@@ -118,6 +131,77 @@ class InterpreterTest(unittest.TestCase):
                 }
                 """
             )
+
+    def test_import_runs_relative_file_and_exposes_definitions(self) -> None:
+        with TemporaryDirectory() as directory:
+            base_path = Path(directory)
+            (base_path / "helper.fr").write_text(
+                """
+                fn addOne(value) {
+                  return value + 1;
+                }
+                """,
+                encoding="utf-8",
+            )
+            interpreter = self.run_source(
+                """
+                import "helper.fr";
+                print(addOne(41));
+                """,
+                base_path=base_path,
+            )
+
+        self.assertEqual(interpreter.output, ["42"])
+
+    def test_import_executes_each_file_once(self) -> None:
+        with TemporaryDirectory() as directory:
+            base_path = Path(directory)
+            (base_path / "helper.fr").write_text(
+                """
+                print("loading");
+                fn label() {
+                  return "ok";
+                }
+                """,
+                encoding="utf-8",
+            )
+            interpreter = self.run_source(
+                """
+                import "helper.fr";
+                import "helper.fr";
+                print(label());
+                """,
+                base_path=base_path,
+            )
+
+        self.assertEqual(interpreter.output, ["loading", "ok"])
+
+    def test_import_rejects_unsafe_paths(self) -> None:
+        with TemporaryDirectory() as directory:
+            base_path = Path(directory)
+            unsafe_path = base_path.resolve().as_posix()
+            with self.assertRaisesRegex(RuntimeError, "import 只支持相对路径"):
+                self.run_source(
+                    f'import "{unsafe_path}";',
+                    base_path=base_path,
+                )
+
+            with self.assertRaisesRegex(RuntimeError, "import 不能读取工作目录外的文件"):
+                self.run_source('import "../outside.fr";', base_path=base_path)
+
+    def test_import_adds_context_to_language_errors(self) -> None:
+        with TemporaryDirectory() as directory:
+            base_path = Path(directory)
+            (base_path / "helper.fr").write_text(
+                "print(missing);\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(
+                RuntimeError,
+                '导入 "helper.fr" 时出错.*变量 missing 未定义',
+            ):
+                self.run_source('import "helper.fr";', base_path=base_path)
 
     def test_runs_if_then_branch(self) -> None:
         interpreter = self.run_source(
@@ -357,6 +441,7 @@ class InterpreterTest(unittest.TestCase):
         self.assertEqual(interpreter.output, ["5", "3", "2"])
 
     def test_builtin_string_helpers_read_text_parts(self) -> None:
+        """验证字符串截取类内置函数能读取字符和片段。"""
         interpreter = self.run_source(
             """
             print(charAt("hello", 1));
@@ -366,7 +451,53 @@ class InterpreterTest(unittest.TestCase):
 
         self.assertEqual(interpreter.output, ["e", "ell"])
 
+    def test_builtin_character_predicates_classify_single_characters(self) -> None:
+        """验证字符判断内置函数能识别数字、字母、下划线和其他字符。"""
+        interpreter = self.run_source(
+            """
+            print(isDigit("7"));
+            print(isDigit("a"));
+            print(isAlpha("a"));
+            print(isAlpha("_"));
+            print(isAlpha("7"));
+            print(isAlphaNumeric("a"));
+            print(isAlphaNumeric("7"));
+            print(isAlphaNumeric("_"));
+            print(isAlphaNumeric("-"));
+            print(codePoint("A"));
+            """
+        )
+
+        self.assertEqual(
+            interpreter.output,
+            [
+                "true",
+                "false",
+                "true",
+                "true",
+                "false",
+                "true",
+                "true",
+                "true",
+                "false",
+                "65",
+            ],
+        )
+
+    def test_prints_string_escape_sequences(self) -> None:
+        """验证解释器输出字符串时会使用解析后的转义内容。"""
+        interpreter = self.run_source(
+            r"""
+            print("a\nb");
+            print("quote: \"");
+            print("tab:\t!");
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["a\nb", 'quote: "', "tab:\t!"])
+
     def test_builtin_type_str_and_number_convert_values(self) -> None:
+        """验证类型查询、字符串转换和数字转换内置函数。"""
         interpreter = self.run_source(
             """
             let missing;
@@ -399,6 +530,7 @@ class InterpreterTest(unittest.TestCase):
         self.assertEqual(interpreter.output, ["2", "[1, 2]", "2", "[1]"])
 
     def test_builtin_reports_argument_type_errors(self) -> None:
+        """验证内置函数遇到错误参数时会给出运行时错误。"""
         with self.assertRaisesRegex(RuntimeError, "len 参数必须是字符串、List 或 Map"):
             self.run_source("print(len(1));")
 
@@ -407,6 +539,18 @@ class InterpreterTest(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "number 无法转换这个字符串"):
             self.run_source('print(number("abc"));')
+
+        with self.assertRaisesRegex(RuntimeError, "isDigit 参数必须是单字符字符串"):
+            self.run_source("print(isDigit(1));")
+
+        with self.assertRaisesRegex(RuntimeError, "isAlpha 参数必须是单字符字符串"):
+            self.run_source('print(isAlpha("ab"));')
+
+        with self.assertRaisesRegex(RuntimeError, "isAlphaNumeric 参数必须是单字符字符串"):
+            self.run_source('print(isAlphaNumeric(""));')
+
+        with self.assertRaisesRegex(RuntimeError, "codePoint 参数必须是单字符字符串"):
+            self.run_source('print(codePoint("AB"));')
 
     def test_builtin_read_file_reads_relative_text_file(self) -> None:
         with TemporaryDirectory() as directory:
@@ -422,9 +566,10 @@ class InterpreterTest(unittest.TestCase):
     def test_builtin_read_file_rejects_unsafe_paths(self) -> None:
         with TemporaryDirectory() as directory:
             base_path = Path(directory)
+            unsafe_path = base_path.resolve().as_posix()
             with self.assertRaisesRegex(RuntimeError, "readFile 只支持相对路径"):
                 self.run_source(
-                    f'print(readFile("{base_path.resolve()}"));',
+                    f'print(readFile("{unsafe_path}"));',
                     base_path=base_path,
                 )
 

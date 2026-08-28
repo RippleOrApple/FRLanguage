@@ -15,13 +15,38 @@
 ```fr
 let name = "FRLanguage";
 let count = 3;
+let missing = nil;
 ```
+
+`nil` 表示空值，也可以通过没有初始化表达式的变量声明得到：
+
+```fr
+let empty;
+print(empty == nil);
+```
+
+## 导入
+
+```fr
+import "helper.fr";
+```
+
+当前导入会执行目标文件，同一个文件只执行一次。导入路径必须是相对路径。
 
 ## 输出
 
 ```fr
 print("hello");
 print(1 + 2);
+```
+
+字符串支持少量常用转义：
+
+```fr
+print("quote: \"");
+print("line\nnext");
+print("tab:\t!");
+print("slash: \\");
 ```
 
 ## 条件分支
@@ -102,6 +127,10 @@ let text = "hello";
 print(len(text));
 print(charAt(text, 1));
 print(substring(text, 1, 4));
+print(isDigit("7"));
+print(isAlpha("F"));
+print(isAlphaNumeric("_"));
+print(codePoint("A"));
 ```
 
 类型和转换：

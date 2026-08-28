@@ -3,6 +3,10 @@ let text = "FRLanguage";
 print(len(text));
 print(charAt(text, 2));
 print(substring(text, 0, 2));
+print(isDigit("7"));
+print(isAlpha("F"));
+print(isAlphaNumeric("_"));
+print(codePoint("A"));
 print(type(text));
 
 let items = [1, 2];

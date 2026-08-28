@@ -1,0 +1,14 @@
+import "tool.fr";
+fn run() {
+  return future {
+    await job;
+  };
+}
+if true and false or ready {
+  break;
+} else {
+  while ready {
+    print(ready);
+  }
+}
+let empty = nil;

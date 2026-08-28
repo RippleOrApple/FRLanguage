@@ -32,6 +32,29 @@ class MainTest(unittest.TestCase):
 
         self.assertEqual(stdout.getvalue(), "from sibling file\n")
 
+    def test_main_resolves_import_from_source_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source_path = Path(directory) / "program.fr"
+            helper_path = Path(directory) / "helper.fr"
+            helper_path.write_text(
+                """
+                fn message() {
+                  return "from import";
+                }
+                """,
+                encoding="utf-8",
+            )
+            source_path.write_text(
+                'import "helper.fr";\nprint(message());\n',
+                encoding="utf-8",
+            )
+
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                main([str(source_path)])
+
+        self.assertEqual(stdout.getvalue(), "from import\n")
+
     def test_main_reports_language_error_without_traceback(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             source_path = Path(directory) / "program.fr"
@@ -44,6 +67,23 @@ class MainTest(unittest.TestCase):
 
         self.assertEqual(exit_context.exception.code, 70)
         self.assertIn("错误：", stderr.getvalue())
+        self.assertIn("变量 missing 未定义", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_main_reports_import_error_context_without_traceback(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source_path = Path(directory) / "program.fr"
+            helper_path = Path(directory) / "helper.fr"
+            helper_path.write_text("print(missing);\n", encoding="utf-8")
+            source_path.write_text('import "helper.fr";\n', encoding="utf-8")
+
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                with self.assertRaises(SystemExit) as exit_context:
+                    main([str(source_path)])
+
+        self.assertEqual(exit_context.exception.code, 70)
+        self.assertIn('导入 "helper.fr" 时出错', stderr.getvalue())
         self.assertIn("变量 missing 未定义", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 

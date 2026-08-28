@@ -11,10 +11,16 @@ FR 现在已经具备一批写 Lexer demo 需要的基础能力：
 - `len`：读取字符串和集合长度。
 - `charAt`：逐字符扫描源码。
 - `substring`：截取词素。
+- `isDigit` / `isAlpha` / `isAlphaNumeric`：判断字符类别。
+- `codePoint`：识别换行、制表符和双引号这类不方便直接写进字符串的字符。
 - `push`：向 Token 列表追加元素。
 - `readFile`：读取源码文本。
+- `import`：把工具函数拆到单独 `.fr` 文件。
+- 导入错误上下文：导入失败时能看到是哪个文件触发的。
 - `and` / `or`：组合扫描条件，并支持短路求值。
 - `break`：在扫描循环中遇到边界字符时退出。
+- 字符串转义：可以直接写 `\"`、`\\`、`\n`、`\t` 和 `\r`。
+- `nil` 字面量：可以直接表达空 literal，不必再写 `let literal;` 这类占位声明。
 
 这些能力还不足以写完整编译器，但已经足够写一个非常小的扫描器。
 
@@ -24,31 +30,51 @@ FR 现在已经具备一批写 Lexer demo 需要的基础能力：
 
 ```txt
 examples/fr_lexer_demo.fr
+examples/fr_lexer_error_demo.fr
+examples/fr_lexer_helpers.fr
+examples/fr_lexer_bad_char_sample.fr.txt
+examples/fr_lexer_error_sample.fr.txt
+examples/fr_lexer_unterminated_string_sample.fr.txt
+examples/fr_lexer_unknown_escape_sample.fr.txt
+examples/fr_lexer_escaped_string_sample.fr.txt
+examples/fr_lexer_nil_sample.fr.txt
+examples/fr_lexer_compare_sample.fr.txt
+examples/fr_lexer_keywords_sample.fr.txt
+examples/fr_lexer_sample.fr.txt
 ```
 
-它扫描这段源码：
+它读取并扫描这段源码：
 
 ```fr
-let answer = 42;
+// demo comment
+let name = "FR";
+if name == "FR" {
+  print(name);
+}
 ```
 
-输出 Token 列表：
+输出的 Token 列表会包含关键字、标识符、字符串、比较运算符、括号、literal、行列号和 EOF，例如：
 
 ```txt
-[{"type": "IDENT", "lexeme": "let"}, {"type": "IDENT", "lexeme": "answer"}, {"type": "EQUAL", "lexeme": "="}, {"type": "NUMBER", "lexeme": "42"}, {"type": "SEMICOLON", "lexeme": ";"}, {"type": "EOF", "lexeme": ""}]
+[{"type": "LET", "lexeme": "let", "literal": nil, "line": 2, "column": 1}, ...]
 ```
+
+错误样例会输出 `ERROR` Token，用来展示未识别字符和未闭合字符串的处理方式。当前 FR 还没有异常机制，所以 FR Lexer 不抛出错误，而是把错误作为 Token 放进扫描结果。
+
+当前测试已经会把 FR Lexer 的输出和 Python Lexer 的输出做结构化对照，覆盖基础源码、更多符号、关键字样例、`nil` 样例、转义字符串样例和基础错误样例。
 
 ## 这个 demo 的限制
 
-- 只处理空格，不处理换行和注释。
-- 标识符、关键字和数字扫描都很粗糙。
-- 还没有模块系统，所以工具代码暂时只能写在一个文件里。
+- 还没有覆盖 Python Lexer 的全部错误场景和恢复策略。
+- 字符串扫描已经支持少量常用转义，但还没有 Unicode 转义、十六进制转义等扩展形式。
+- 错误处理先用 `ERROR` Token 表达，还没有停止扫描或汇总诊断。
+- 模块系统还没有命名空间和导出控制。
 
 ## 下一步建议
 
 优先补：
 
-- 字符串判断函数：例如 `isDigit`、`isAlpha` 可以先作为 FR 函数练习，也可以以后做成内置函数。
-- 模块系统：把扫描器工具函数拆到单独文件。
+- 模块命名空间和导出控制：避免导入文件里的名字全部进入当前环境。
+- 更完整的 FR Lexer：继续补齐错误场景、错误汇总或更多字面量形式。
 
 这些能力完成后，可以把 `fr_lexer_demo.fr` 扩展成真正的 `fr_lexer.fr`。

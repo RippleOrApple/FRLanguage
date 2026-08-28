@@ -7,6 +7,7 @@ from frlang.token import TokenType
 
 class LexerTest(unittest.TestCase):
     def token_types(self, source: str) -> list[TokenType]:
+        """扫描源码并只返回 Token 类型，方便断言词法结构。"""
         return [token.type for token in Lexer(source).scan_tokens()]
 
     def test_empty_source_returns_eof(self) -> None:
@@ -79,6 +80,22 @@ class LexerTest(unittest.TestCase):
         self.assertEqual(tokens[8].literal, 12.5)
         self.assertEqual(tokens[10].literal, 2)
 
+    def test_scans_string_escape_sequences(self) -> None:
+        """验证字符串转义会被解析成真实 literal。"""
+        source = '"quote: \\" slash: \\\\ line: \\n tab: \\t return: \\r"'
+        tokens = Lexer(source).scan_tokens()
+
+        self.assertIs(tokens[0].type, TokenType.STRING)
+        self.assertEqual(
+            tokens[0].literal,
+            'quote: " slash: \\ line: \n tab: \t return: \r',
+        )
+
+    def test_unknown_string_escape_raises_lexer_error(self) -> None:
+        """验证未知字符串转义会报词法错误。"""
+        with self.assertRaisesRegex(LexerError, r"未知字符串转义：\\x"):
+            Lexer('"bad \\x"').scan_tokens()
+
     def test_scans_list_brackets(self) -> None:
         self.assertEqual(
             self.token_types("[1, 2]"),
@@ -112,6 +129,25 @@ class LexerTest(unittest.TestCase):
                 TokenType.AND,
                 TokenType.OR,
                 TokenType.BREAK,
+                TokenType.EOF,
+            ],
+        )
+
+    def test_scans_nil_keyword_with_nil_literal(self) -> None:
+        """验证 nil 会被识别为关键字，并携带运行时 nil 值。"""
+        tokens = Lexer("nil").scan_tokens()
+
+        self.assertEqual(tokens[0].type.name, "NIL")
+        self.assertEqual(tokens[0].lexeme, "nil")
+        self.assertIsNone(tokens[0].literal)
+
+    def test_scans_import_keyword(self) -> None:
+        self.assertEqual(
+            self.token_types('import "helper.fr";'),
+            [
+                TokenType.IMPORT,
+                TokenType.STRING,
+                TokenType.SEMICOLON,
                 TokenType.EOF,
             ],
         )

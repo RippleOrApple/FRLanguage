@@ -135,6 +135,14 @@ class VarStmt(Stmt):
 
 
 @dataclass(frozen=True)
+class ImportStmt(Stmt):
+    """导入其他 FR 源文件的语句。"""
+
+    keyword: Token
+    path: Token
+
+
+@dataclass(frozen=True)
 class PrintStmt(Stmt):
     """输出语句。"""
 

@@ -1,0 +1,3 @@
+import "fr_lexer_helpers.fr";
+
+print(scan(readFile("fr_lexer_error_sample.fr.txt")));

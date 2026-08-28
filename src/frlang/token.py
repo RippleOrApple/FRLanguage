@@ -37,6 +37,7 @@ class TokenType(Enum):
     NUMBER = auto()
 
     LET = auto()
+    IMPORT = auto()
     FN = auto()
     RETURN = auto()
     IF = auto()
@@ -47,6 +48,7 @@ class TokenType(Enum):
     OR = auto()
     TRUE = auto()
     FALSE = auto()
+    NIL = auto()
     FUTURE = auto()
     AWAIT = auto()
     PRINT = auto()

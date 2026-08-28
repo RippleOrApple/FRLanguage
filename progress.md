@@ -32,3 +32,37 @@
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_demo.fr`：输出 Token 列表。
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/builtins.fr`：通过。
+- 开始实现最小模块系统：为 `import "helper.fr";` 写 Lexer、Interpreter 和 CLI 测试。
+- 运行相关测试，新增测试按预期失败：`TokenType.IMPORT` 不存在，Parser 还把 `import` 当作普通表达式处理。
+- 实现 `ImportStmt`、`import` 关键字、Parser 语句解析和解释器导入执行。
+- `import` 以当前源码文件所在目录为基准，拒绝绝对路径和目录逃逸，并缓存已导入文件，避免重复执行。
+- 新增 `examples/fr_lexer_helpers.fr`，把 `fr_lexer_demo.fr` 中的 `isDigit` 和 `addToken` 拆出。
+- 更新 README、Lexer、Parser、Interpreter、语言草案、路线图和自举准备笔记。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：67 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_demo.fr`：导入 helper 后输出 Token 列表。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/builtins.fr`：通过。
+- 给 `src/frlang/lexer.py`、`src/frlang/parser.py`、`src/frlang/interpreter.py` 和 `src/frlang/main.py` 增加中文函数说明，重点解释扫描游标、递归下降优先级、执行模型、内置函数、import/readFile 路径约束和 Map key 规范化。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：67 个测试通过。
+- 为导入文件中的语言错误补充上下文，例如 `导入 "helper.fr" 时出错：...`。
+- 新增解释器和 CLI 测试，覆盖导入文件内部运行时错误的报错信息。
+- 增加 `isDigit`、`isAlpha`、`isAlphaNumeric` 三个字符判断内置函数，并用测试覆盖正常分类和错误参数。
+- 删除 FR Lexer helper 中手写的 `isDigit`，让 demo 直接复用解释器内置能力。
+- 给示例目录中的 FR 函数补充简短注释，方便阅读示例时理解用途。
+- 增加 `codePoint(ch)`，让 FR 代码可以识别双引号、换行和制表符等字符。
+- 扩展 `examples/fr_lexer_demo.fr` 和 `examples/fr_lexer_helpers.fr`：现在能读取样例源码文件，跳过单行注释和空白，并识别关键字、字符串、数字、标识符、单字符符号和双字符比较符号。
+- 新增 `tests/test_examples.py`，用命令行入口验证 FR Lexer demo 的实际输出。
+- 重构 FR Lexer demo 的 helper：使用 scanner Map 统一保存源码、当前游标、行列号和 Token 列表。
+- FR Lexer demo 的 Token 现在包含 `type`、`lexeme`、`literal`、`line`、`column`。
+- 新增 `examples/fr_lexer_error_demo.fr` 和错误样例文件，展示未识别字符和未闭合字符串会输出 `ERROR` Token。
+- 把 FR Lexer demo 的 `scan(source)` 入口移动到 helper 中，让正常样例和错误样例复用同一套扫描逻辑。
+- 新增 Python Lexer 与 FR Lexer 的结构化对照测试，覆盖基础源码、更多符号和完整关键字样例。
+- 将 FR Lexer demo 的普通标识符 Token 名称从 `IDENT` 统一为 Python Lexer 使用的 `IDENTIFIER`。
+- 新增坏字符和未闭合字符串的错误对照测试，确认 FR 的 `ERROR` Token 与 Python Lexer 的核心错误消息一致。
+- 调整 FR Lexer 的坏字符错误消息，从 `无法识别的字符` 改为 `无法识别的字符：具体字符`。
+- 为 Python Lexer 增加字符串转义支持：`\"`、`\\`、`\n`、`\t`、`\r`。
+- 新增解释器输出测试，确认字符串 literal 会先解析转义再进入运行时。
+- FR Lexer demo 同步支持字符串转义，并新增转义字符串样例和未知转义错误样例的结构化对照测试。
+- 增加显式 `nil` 字面量：Lexer 会识别 `nil` 关键字，Parser 会生成 `LiteralExpr(None)`，解释器可直接输出和比较 `nil`。
+- FR Lexer demo 同步识别 `nil`，并新增 `examples/fr_lexer_nil_sample.fr.txt` 覆盖关键字 Token。
