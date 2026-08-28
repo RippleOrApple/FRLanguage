@@ -1,0 +1,6 @@
+let items = [1, 2.5];
+let config = {"ok": true, "bad": false};
+items[0] != config.ok;
+while items[0] <= 10 {
+  items[0] = items[0] + 1;
+}

@@ -31,6 +31,8 @@ examples/fr_lexer_demo.fr
 examples/fr_lexer_error_demo.fr
 examples/fr_lexer_helpers.fr
 examples/fr_lexer_error_sample.fr.txt
+examples/fr_lexer_compare_sample.fr.txt
+examples/fr_lexer_keywords_sample.fr.txt
 examples/fr_lexer_sample.fr.txt
 ```
 
@@ -52,9 +54,11 @@ if name == "FR" {
 
 错误样例会输出 `ERROR` Token，用来展示未识别字符和未闭合字符串的处理方式。
 
+当前测试已经会把 FR Lexer 的输出和 Python Lexer 的输出做结构化对照，覆盖基础源码、更多符号和关键字样例。
+
 ## 这个 demo 的限制
 
-- 还没有和 Python Lexer 做逐项对齐测试。
+- 还没有覆盖 Python Lexer 的全部错误场景。
 - 字符串扫描只处理最简单的双引号字符串，还没有转义字符。
 - 错误处理先用 `ERROR` Token 表达，还没有停止扫描或汇总诊断。
 - 模块系统还没有命名空间和导出控制。
@@ -64,6 +68,6 @@ if name == "FR" {
 优先补：
 
 - 模块命名空间和导出控制：避免导入文件里的名字全部进入当前环境。
-- 更完整的 FR Lexer：和 Python Lexer 对齐更多样例，补转义字符串或错误汇总。
+- 更完整的 FR Lexer：继续补齐错误场景、转义字符串或错误汇总。
 
 这些能力完成后，可以把 `fr_lexer_demo.fr` 扩展成真正的 `fr_lexer.fr`。

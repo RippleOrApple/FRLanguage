@@ -57,3 +57,5 @@
 - FR Lexer demo 的 Token 现在包含 `type`、`lexeme`、`literal`、`line`、`column`。
 - 新增 `examples/fr_lexer_error_demo.fr` 和错误样例文件，展示未识别字符和未闭合字符串会输出 `ERROR` Token。
 - 把 FR Lexer demo 的 `scan(source)` 入口移动到 helper 中，让正常样例和错误样例复用同一套扫描逻辑。
+- 新增 Python Lexer 与 FR Lexer 的结构化对照测试，覆盖基础源码、更多符号和完整关键字样例。
+- 将 FR Lexer demo 的普通标识符 Token 名称从 `IDENT` 统一为 Python Lexer 使用的 `IDENTIFIER`。

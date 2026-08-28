@@ -22,6 +22,7 @@
 - [x] 阶段 13：增加字符判断内置函数，简化 FR Lexer demo。
 - [x] 阶段 14：扩展 FR Lexer demo，支持关键字、字符串、注释、空白和更多符号。
 - [x] 阶段 15：让 FR Lexer demo 输出 literal、行列号和错误 Token。
+- [x] 阶段 16：增加 Python Lexer 与 FR Lexer 的结构化对照测试。
 
 ## 决策
 

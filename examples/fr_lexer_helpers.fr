@@ -121,7 +121,7 @@ fn keywordType(text) {
   if text == "print" {
     return "PRINT";
   }
-  return "IDENT";
+  return "IDENTIFIER";
 }
 
 // 根据关键字文本返回对应 literal；没有 literal 时返回 nil。
