@@ -116,6 +116,19 @@ class ExampleTest(unittest.TestCase):
         interpreter.interpret(program)
         return self.normalize_fr_value(interpreter.globals.values["actual"])
 
+    def run_fr_bootstrap_suite(self, source_paths: list[str]) -> list[dict[str, Any]]:
+        """运行 FR 写的 bootstrap suite，并返回结构化自举结果。"""
+        path_items = ", ".join(f'"{path}"' for path in source_paths)
+        program_source = f"""
+        import "toolchain/bootstrap.fr";
+        let actual = runBootstrapSuite([{path_items}]);
+        """
+        tokens = Lexer(program_source).scan_tokens()
+        program = Parser(tokens).parse()
+        interpreter = Interpreter(base_path=Path("examples"))
+        interpreter.interpret(program)
+        return self.normalize_fr_value(interpreter.globals.values["actual"])
+
     def python_program_output(self, source_path: str) -> list[str]:
         """运行 Python 实现的 FR 语言链路，并返回输出列表。"""
         source = Path("examples", source_path).read_text(encoding="utf-8")
@@ -715,6 +728,33 @@ class ExampleTest(unittest.TestCase):
             self.run_fr_self_interpreter(source_path),
             self.python_program_output(source_path),
         )
+
+    def test_fr_bootstrap_suite_runs_multiple_programs(self) -> None:
+        """验证 FR 写的 bootstrap suite 能运行多组自举样例。"""
+        source_paths = [
+            "fr_parser_basic_sample.fr.txt",
+            "fr_parser_import_sample.fr.txt",
+            "fr_parser_future_sample.fr.txt",
+        ]
+        expected = [
+            {
+                "path": path,
+                "output": self.python_program_output(path),
+                "errors": [],
+            }
+            for path in source_paths
+        ]
+
+        self.assertEqual(self.run_fr_bootstrap_suite(source_paths), expected)
+
+    def test_fr_bootstrap_suite_example_runs(self) -> None:
+        """验证 bootstrap suite 示例可以通过命令行运行。"""
+        output = self.run_example("examples/fr_bootstrap_suite.fr")
+
+        self.assertIn('"path": "fr_parser_basic_sample.fr.txt"', output)
+        self.assertIn('"output": [7, false]', output)
+        self.assertIn('"path": "fr_parser_import_sample.fr.txt"', output)
+        self.assertIn('"output": [1, 5]', output)
 
     def test_legacy_fr_toolchain_helper_imports_still_work(self) -> None:
         """验证旧 helper 文件仍会导入新的 toolchain 组件。"""

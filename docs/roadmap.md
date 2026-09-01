@@ -358,7 +358,7 @@ FR 程序
 - `examples/toolchain/interpreter.fr`
 - 自举示例程序
 - 对比测试
-- 当前已有 `examples/toolchain/lexer.fr`、`examples/toolchain/parser.fr` 和 `examples/toolchain/interpreter.fr` 作为自举工具链核心组件。
+- 当前已有 `examples/toolchain/lexer.fr`、`examples/toolchain/parser.fr`、`examples/toolchain/interpreter.fr` 和 `examples/toolchain/bootstrap.fr` 作为自举工具链核心组件。
 
 完成标准：
 

@@ -26,6 +26,7 @@ FR 写的工具链核心组件已经整理到 `examples/toolchain/`：
 - `examples/toolchain/lexer.fr`
 - `examples/toolchain/parser.fr`
 - `examples/toolchain/interpreter.fr`
+- `examples/toolchain/bootstrap.fr`
 
 ## 当前支持的语法
 
@@ -72,6 +73,7 @@ $env:PYTHONPATH='src'; python -m frlang.main examples/builtins.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_demo.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_error_demo.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr
+$env:PYTHONPATH='src'; python -m frlang.main examples/fr_bootstrap_suite.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/function.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/recursion.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/future.fr

@@ -1,0 +1,9 @@
+import "toolchain/bootstrap.fr";
+
+let results = runBootstrapSuite([
+  "fr_parser_basic_sample.fr.txt",
+  "fr_parser_import_sample.fr.txt",
+  "fr_parser_future_sample.fr.txt"
+]);
+
+print(results);

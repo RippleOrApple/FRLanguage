@@ -128,6 +128,17 @@
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 开始阶段 26.1：新增 `examples/toolchain/bootstrap.fr`，用 FR 组织多组目标源码的自举运行。
+- 新增 `examples/fr_bootstrap_suite.fr`，通过命令行展示 bootstrap suite 的结构化结果。
+- 新增 bootstrap suite 测试，确认 FR 写的 suite 能运行基础、import 和 Future 三组目标程序，并返回路径、输出和错误列表。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_bootstrap_suite_runs_multiple_programs tests.test_examples.ExampleTest.test_fr_bootstrap_suite_example_runs`：2 个 bootstrap 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：39 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_bootstrap_suite.fr`：输出三组结构化自举验证结果。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出十个自举样例结果。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：116 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
 - 开始阶段 25.5：新增 `examples/fr_parser_import_sample.fr.txt` 和 `examples/fr_parser_import_helper_sample.fr.txt`，覆盖目标程序导入 helper、读取导入文件中的函数，以及重复导入缓存。
 - 更新 examples 测试的 Python AST 归一化逻辑，加入 `ImportStmt` 对照结构。
 - 新增 FR Parser import 对照测试和自解释器 import 端到端测试；新增测试先按预期失败，暴露 FR Parser 将 `import` 降为占位表达式，自解释器没有执行 helper 文件。

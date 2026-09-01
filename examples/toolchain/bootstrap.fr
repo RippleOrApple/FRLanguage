@@ -1,0 +1,24 @@
+import "lexer.fr";
+import "parser.fr";
+import "interpreter.fr";
+
+// 运行一个自举样例文件，并返回路径、输出和错误诊断。
+fn runBootstrapCase(path) {
+  let result = runSelfHostedSourceResult(readFile(path));
+  return {
+    "path": path,
+    "output": result["output"],
+    "errors": result["errors"]
+  };
+}
+
+// 运行一组自举样例文件，并返回结构化结果列表。
+fn runBootstrapSuite(paths) {
+  let results = [];
+  let index = 0;
+  while index < len(paths) {
+    push(results, runBootstrapCase(paths[index]));
+    index = index + 1;
+  }
+  return results;
+}

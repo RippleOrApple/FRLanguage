@@ -33,9 +33,11 @@ FR 现在已经具备一批写 Lexer demo 需要的基础能力：
 examples/fr_lexer_demo.fr
 examples/fr_lexer_error_demo.fr
 examples/fr_self_host_demo.fr
+examples/fr_bootstrap_suite.fr
 examples/toolchain/lexer.fr
 examples/toolchain/parser.fr
 examples/toolchain/interpreter.fr
+examples/toolchain/bootstrap.fr
 examples/fr_lexer_helpers.fr
 examples/fr_parser_helpers.fr
 examples/fr_interpreter_helpers.fr
