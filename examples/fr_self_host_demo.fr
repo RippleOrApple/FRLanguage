@@ -1,0 +1,5 @@
+import "fr_lexer_helpers.fr";
+import "fr_parser_helpers.fr";
+import "fr_interpreter_helpers.fr";
+
+print(runSelfHostedSource(readFile("fr_parser_basic_sample.fr.txt")));

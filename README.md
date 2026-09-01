@@ -64,6 +64,7 @@ $env:PYTHONPATH='src'; python -m frlang.main examples/map.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/builtins.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_demo.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_error_demo.fr
+$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/function.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/recursion.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/future.fr
@@ -101,6 +102,7 @@ print(missing);
 - 没有类和对象系统
 - Runtime 是协作式任务队列，不是真正多线程或 IO 异步
 - `await` 当前通过 Runtime 队列运行 Future 任务，还没有完整的暂停和恢复调用栈模型
+- 自举工具链目前只覆盖最小子集：FR Parser/Interpreter 子集可运行变量、基础表达式和 `print`
 
 ## 后续方向
 

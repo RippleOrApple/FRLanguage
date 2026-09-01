@@ -22,7 +22,7 @@ FR 现在已经具备一批写 Lexer demo 需要的基础能力：
 - 字符串转义：可以直接写 `\"`、`\\`、`\n`、`\t` 和 `\r`。
 - `nil` 字面量：可以直接表达空 literal，不必再写 `let literal;` 这类占位声明。
 
-这些能力还不足以写完整编译器，但已经足够写一个非常小的扫描器。
+这些能力还不足以写完整编译器，但已经足够写一个非常小的扫描器、Parser 子集和解释器子集。
 
 ## 当前 demo
 
@@ -32,6 +32,9 @@ FR 现在已经具备一批写 Lexer demo 需要的基础能力：
 examples/fr_lexer_demo.fr
 examples/fr_lexer_error_demo.fr
 examples/fr_lexer_helpers.fr
+examples/fr_parser_helpers.fr
+examples/fr_interpreter_helpers.fr
+examples/fr_self_host_demo.fr
 examples/fr_lexer_bad_char_sample.fr.txt
 examples/fr_lexer_error_sample.fr.txt
 examples/fr_lexer_unterminated_string_sample.fr.txt
@@ -41,6 +44,7 @@ examples/fr_lexer_nil_sample.fr.txt
 examples/fr_lexer_compare_sample.fr.txt
 examples/fr_lexer_keywords_sample.fr.txt
 examples/fr_lexer_sample.fr.txt
+examples/fr_parser_basic_sample.fr.txt
 ```
 
 它读取并扫描这段源码：
@@ -63,11 +67,24 @@ if name == "FR" {
 
 当前测试已经会把 FR Lexer 的输出和 Python Lexer 的输出做结构化对照，覆盖基础源码、更多符号、关键字样例、`nil` 样例、转义字符串样例和基础错误样例。
 
+当前也已经有第一条最小自举闭环：
+
+```txt
+Python 写的 FR 解释器
+  -> 运行 FR 写的 Lexer / Parser 子集 / Interpreter 子集
+  -> 处理 examples/fr_parser_basic_sample.fr.txt
+  -> 输出和 Python 原生链路一致
+```
+
+这个闭环暂时覆盖变量声明、`print`、字面量、变量读取、括号、一元表达式和基础二元表达式。
+
 ## 这个 demo 的限制
 
 - 还没有覆盖 Python Lexer 的全部错误场景和恢复策略。
 - 字符串扫描已经支持少量常用转义，但还没有 Unicode 转义、十六进制转义等扩展形式。
 - 错误处理先用 `ERROR` Token 表达，还没有停止扫描或汇总诊断。
+- FR Parser 子集还没有覆盖 `if`、`while`、函数、List/Map 字面量、调用和索引。
+- FR 解释器子集还没有覆盖作用域、控制流、函数、List/Map、Future 和运行时错误诊断。
 - 模块系统还没有命名空间和导出控制。
 
 ## 下一步建议
@@ -75,6 +92,8 @@ if name == "FR" {
 优先补：
 
 - 模块命名空间和导出控制：避免导入文件里的名字全部进入当前环境。
+- 扩展 FR Parser 子集：优先补 List/Map 字面量、调用和索引，因为自举工具链会大量使用结构化数据。
+- 扩展 FR 解释器子集：优先补作用域、赋值和 List/Map 操作。
 - 更完整的 FR Lexer：继续补齐错误场景、错误汇总或更多字面量形式。
 
-这些能力完成后，可以把 `fr_lexer_demo.fr` 扩展成真正的 `fr_lexer.fr`。
+这些能力完成后，可以把当前 helper 文件整理成更正式的 FR 工具链目录。

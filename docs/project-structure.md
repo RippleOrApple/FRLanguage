@@ -18,6 +18,10 @@ FRLanguage/
 ├─ examples/
 │  ├─ hello.fr
 │  ├─ function.fr
+│  ├─ fr_lexer_helpers.fr
+│  ├─ fr_parser_helpers.fr
+│  ├─ fr_interpreter_helpers.fr
+│  ├─ fr_self_host_demo.fr
 │  └─ future.fr
 ├─ src/
 │  └─ frlang/
@@ -156,6 +160,7 @@ Future 对象。
 - 展示语法
 - 辅助手动测试
 - 作为文档补充
+- 保存 FR 写的工具链 demo，例如 Lexer、Parser 子集和解释器子集
 
 ## `tests/`
 

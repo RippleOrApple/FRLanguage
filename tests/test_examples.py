@@ -4,6 +4,19 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Any
 
+from frlang.ast import (
+    BinaryExpr,
+    Expr,
+    ExprStmt,
+    GroupingExpr,
+    LiteralExpr,
+    PrintStmt,
+    Program,
+    Stmt,
+    UnaryExpr,
+    VarStmt,
+    VariableExpr,
+)
 from frlang.errors import LexerError
 from frlang.interpreter import Interpreter, MapKey
 from frlang.lexer import Lexer
@@ -32,6 +45,109 @@ class ExampleTest(unittest.TestCase):
         interpreter = Interpreter(base_path=Path("examples"))
         interpreter.interpret(program)
         return self.normalize_fr_value(interpreter.globals.values["actual"])
+
+    def run_fr_parser(self, source_path: str) -> dict[str, Any]:
+        """运行 FR 写的 Parser 子集，并返回转换后的 AST Map。"""
+        program_source = f"""
+        import "fr_lexer_helpers.fr";
+        import "fr_parser_helpers.fr";
+        let actual = parseSource(readFile("{source_path}"));
+        """
+        tokens = Lexer(program_source).scan_tokens()
+        program = Parser(tokens).parse()
+        interpreter = Interpreter(base_path=Path("examples"))
+        interpreter.interpret(program)
+        return self.normalize_fr_value(interpreter.globals.values["actual"])
+
+    def run_fr_self_interpreter(self, source_path: str) -> list[str]:
+        """运行 FR 写的解释器子集，并返回它收集的输出列表。"""
+        program_source = f"""
+        import "fr_lexer_helpers.fr";
+        import "fr_parser_helpers.fr";
+        import "fr_interpreter_helpers.fr";
+        let actual = runSelfHostedSource(readFile("{source_path}"));
+        """
+        tokens = Lexer(program_source).scan_tokens()
+        program = Parser(tokens).parse()
+        interpreter = Interpreter(base_path=Path("examples"))
+        interpreter.interpret(program)
+        return self.normalize_fr_value(interpreter.globals.values["actual"])
+
+    def python_program_output(self, source_path: str) -> list[str]:
+        """运行 Python 实现的 FR 语言链路，并返回输出列表。"""
+        source = Path("examples", source_path).read_text(encoding="utf-8")
+        tokens = Lexer(source).scan_tokens()
+        program = Parser(tokens).parse()
+        interpreter = Interpreter(base_path=Path("examples"))
+        interpreter.interpret(program)
+        return interpreter.output
+
+    def python_parser_ast(self, source_path: str) -> dict[str, Any]:
+        """运行 Python Parser，并转换成 FR Parser 子集使用的 AST Map。"""
+        source = Path("examples", source_path).read_text(encoding="utf-8")
+        tokens = Lexer(source).scan_tokens()
+        program = Parser(tokens).parse()
+        return self.normalize_python_program(program)
+
+    def normalize_python_program(self, program: Program) -> dict[str, Any]:
+        """把 Python Program 节点转换成可对照的字典结构。"""
+        return {
+            "type": "Program",
+            "statements": [
+                self.normalize_python_stmt(statement)
+                for statement in program.statements
+            ],
+            "errors": [],
+        }
+
+    def normalize_python_stmt(self, statement: Stmt) -> dict[str, Any]:
+        """把 Python 语句节点转换成 FR Parser 子集的 AST Map。"""
+        if isinstance(statement, VarStmt):
+            initializer = None
+            if statement.initializer is not None:
+                initializer = self.normalize_python_expr(statement.initializer)
+            return {
+                "type": "VarStmt",
+                "name": statement.name.lexeme,
+                "initializer": initializer,
+            }
+        if isinstance(statement, PrintStmt):
+            return {
+                "type": "PrintStmt",
+                "expression": self.normalize_python_expr(statement.expression),
+            }
+        if isinstance(statement, ExprStmt):
+            return {
+                "type": "ExprStmt",
+                "expression": self.normalize_python_expr(statement.expression),
+            }
+        self.fail(f"Python AST 语句类型暂未纳入 FR Parser 对照：{type(statement)}")
+
+    def normalize_python_expr(self, expression: Expr) -> dict[str, Any]:
+        """把 Python 表达式节点转换成 FR Parser 子集的 AST Map。"""
+        if isinstance(expression, LiteralExpr):
+            return {"type": "LiteralExpr", "value": expression.value}
+        if isinstance(expression, VariableExpr):
+            return {"type": "VariableExpr", "name": expression.name.lexeme}
+        if isinstance(expression, GroupingExpr):
+            return {
+                "type": "GroupingExpr",
+                "expression": self.normalize_python_expr(expression.expression),
+            }
+        if isinstance(expression, UnaryExpr):
+            return {
+                "type": "UnaryExpr",
+                "operator": expression.operator.lexeme,
+                "right": self.normalize_python_expr(expression.right),
+            }
+        if isinstance(expression, BinaryExpr):
+            return {
+                "type": "BinaryExpr",
+                "left": self.normalize_python_expr(expression.left),
+                "operator": expression.operator.lexeme,
+                "right": self.normalize_python_expr(expression.right),
+            }
+        self.fail(f"Python AST 表达式类型暂未纳入 FR Parser 对照：{type(expression)}")
 
     def normalize_fr_value(self, value: Any) -> Any:
         """把 FR 运行时的 List/MapKey 结构转换成普通 Python 结构。"""
@@ -226,6 +342,67 @@ class ExampleTest(unittest.TestCase):
         self.assertIn(
             '"literal": "字符串没有结束", "line": 2, "column": 1}',
             output,
+        )
+
+    def test_fr_parser_parses_basic_program_ast(self) -> None:
+        """验证 FR Parser 子集能把基础程序解析成 AST Map。"""
+        self.assertEqual(
+            self.run_fr_parser("fr_parser_basic_sample.fr.txt"),
+            {
+                "type": "Program",
+                "statements": [
+                    {
+                        "type": "VarStmt",
+                        "name": "answer",
+                        "initializer": {
+                            "type": "BinaryExpr",
+                            "left": {"type": "LiteralExpr", "value": 1},
+                            "operator": "+",
+                            "right": {
+                                "type": "BinaryExpr",
+                                "left": {"type": "LiteralExpr", "value": 2},
+                                "operator": "*",
+                                "right": {"type": "LiteralExpr", "value": 3},
+                            },
+                        },
+                    },
+                    {
+                        "type": "PrintStmt",
+                        "expression": {
+                            "type": "VariableExpr",
+                            "name": "answer",
+                        },
+                    },
+                    {
+                        "type": "PrintStmt",
+                        "expression": {
+                            "type": "BinaryExpr",
+                            "left": {"type": "LiteralExpr", "value": None},
+                            "operator": "==",
+                            "right": {"type": "LiteralExpr", "value": False},
+                        },
+                    },
+                ],
+                "errors": [],
+            },
+        )
+
+    def test_fr_parser_matches_python_parser_for_basic_program(self) -> None:
+        """验证 FR Parser 子集和 Python Parser 的 AST 结构一致。"""
+        source_path = "fr_parser_basic_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_parser(source_path),
+            self.python_parser_ast(source_path),
+        )
+
+    def test_fr_self_interpreter_runs_basic_program(self) -> None:
+        """验证 FR 写的解释器子集能运行基础 FR 程序。"""
+        source_path = "fr_parser_basic_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_self_interpreter(source_path),
+            self.python_program_output(source_path),
         )
 
 

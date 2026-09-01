@@ -66,3 +66,19 @@
 - FR Lexer demo 同步支持字符串转义，并新增转义字符串样例和未知转义错误样例的结构化对照测试。
 - 增加显式 `nil` 字面量：Lexer 会识别 `nil` 关键字，Parser 会生成 `LiteralExpr(None)`，解释器可直接输出和比较 `nil`。
 - FR Lexer demo 同步识别 `nil`，并新增 `examples/fr_lexer_nil_sample.fr.txt` 覆盖关键字 Token。
+
+## 2026-09-01
+
+- 用户将目标升级为“继续做下去，直到实现自举”。
+- 将 `GOAL.md` 从旧的短期内置函数目标更新为长期自举目标，明确最短路径为 FR Lexer -> FR Parser 子集 -> FR Interpreter 子集 -> 端到端自举对照。
+- 更新 `task_plan.md`，新增阶段 20 到阶段 24，要求每一步都保持可运行、可测试、可记录。
+- 新增 `examples/fr_parser_helpers.fr`，用 FR 实现 Parser 子集，能解析 `let`、`print`、表达式语句、字面量、变量、括号、一元表达式和基础二元表达式。
+- 新增 FR Parser 测试，确认 Parser 子集能把 `examples/fr_parser_basic_sample.fr.txt` 转换成 AST Map。
+- 新增 Python Parser AST 结构化转换测试，确认 FR Parser 子集和 Python Parser 在基础样例上对齐。
+- 新增 `examples/fr_interpreter_helpers.fr`，用 FR 实现解释器子集，能执行变量声明、`print` 和基础表达式。
+- 新增最小自举闭环测试：Python FR 解释器运行 FR 写的 Lexer、Parser 子集和解释器子集，输出与 Python 原生链路一致。
+- 新增 `examples/fr_self_host_demo.fr`，用于手动运行最小自举 demo。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_parser_parses_basic_program_ast tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_basic_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_basic_program`：3 个自举相关测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出 `[7, false]`。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：89 个测试通过。
+- 运行 `python -m compileall src tests`：通过。

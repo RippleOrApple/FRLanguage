@@ -1,0 +1,254 @@
+// 创建 Parser 状态，保存 Token 列表、当前位置和错误列表。
+fn createParser(tokens) {
+  return {"tokens": tokens, "current": 0, "errors": []};
+}
+
+// 读取当前 Token，但不移动 Parser 游标。
+fn peekToken(parser) {
+  return parser["tokens"][parser["current"]];
+}
+
+// 读取刚刚消费过的 Token。
+fn previousToken(parser) {
+  return parser["tokens"][parser["current"] - 1];
+}
+
+// 判断 Parser 是否已经读到 EOF。
+fn isParserAtEnd(parser) {
+  return peekToken(parser)["type"] == "EOF";
+}
+
+// 判断当前 Token 是否是指定类型。
+fn checkType(parser, tokenType) {
+  if isParserAtEnd(parser) {
+    return tokenType == "EOF";
+  }
+  return peekToken(parser)["type"] == tokenType;
+}
+
+// 消费当前 Token，并把 Parser 游标向后移动一格。
+fn advanceToken(parser) {
+  if !isParserAtEnd(parser) {
+    parser["current"] = parser["current"] + 1;
+  }
+  return previousToken(parser);
+}
+
+// 如果当前 Token 类型匹配，就消费它并返回 true。
+fn matchType(parser, tokenType) {
+  if checkType(parser, tokenType) {
+    advanceToken(parser);
+    return true;
+  }
+  return false;
+}
+
+// 记录 Parser 错误，后续测试可以读取 errors 字段。
+fn addParserError(parser, token, message) {
+  push(parser["errors"], {
+    "message": message,
+    "line": token["line"],
+    "column": token["column"]
+  });
+}
+
+// 消费指定类型 Token；不匹配时记录错误并返回当前 Token。
+fn consumeType(parser, tokenType, message) {
+  if checkType(parser, tokenType) {
+    return advanceToken(parser);
+  }
+  let token = peekToken(parser);
+  addParserError(parser, token, message);
+  return token;
+}
+
+// 创建字面量表达式 AST Map。
+fn literalExpr(value) {
+  return {"type": "LiteralExpr", "value": value};
+}
+
+// 创建变量读取表达式 AST Map。
+fn variableExpr(name) {
+  return {"type": "VariableExpr", "name": name};
+}
+
+// 创建括号表达式 AST Map。
+fn groupingExpr(expression) {
+  return {"type": "GroupingExpr", "expression": expression};
+}
+
+// 创建一元表达式 AST Map。
+fn unaryExpr(operator, right) {
+  return {"type": "UnaryExpr", "operator": operator, "right": right};
+}
+
+// 创建二元表达式 AST Map。
+fn binaryExpr(left, operator, right) {
+  return {"type": "BinaryExpr", "left": left, "operator": operator, "right": right};
+}
+
+// 创建变量声明语句 AST Map。
+fn varStmt(name, initializer) {
+  return {"type": "VarStmt", "name": name, "initializer": initializer};
+}
+
+// 创建 print 语句 AST Map。
+fn printStmt(expression) {
+  return {"type": "PrintStmt", "expression": expression};
+}
+
+// 创建表达式语句 AST Map。
+fn exprStmt(expression) {
+  return {"type": "ExprStmt", "expression": expression};
+}
+
+// 把源码字符串先交给 FR Lexer，再解析成 Program AST Map。
+fn parseSource(source) {
+  return parseTokens(scan(source));
+}
+
+// 解析 Token 列表，返回最外层 Program AST Map。
+fn parseTokens(tokens) {
+  let parser = createParser(tokens);
+  let statements = [];
+  while !isParserAtEnd(parser) {
+    push(statements, parseDeclaration(parser));
+  }
+  return {"type": "Program", "statements": statements, "errors": parser["errors"]};
+}
+
+// 解析声明级语法，目前只支持 let，其他交给普通语句。
+fn parseDeclaration(parser) {
+  if matchType(parser, "LET") {
+    return parseVarDeclaration(parser);
+  }
+  return parseStatement(parser);
+}
+
+// 解析变量声明：let name = expression;
+fn parseVarDeclaration(parser) {
+  let name = consumeType(parser, "IDENTIFIER", "变量声明需要变量名");
+  let initializer = nil;
+  if matchType(parser, "EQUAL") {
+    initializer = parseExpression(parser);
+  }
+  consumeType(parser, "SEMICOLON", "变量声明末尾需要 ';'");
+  return varStmt(name["lexeme"], initializer);
+}
+
+// 解析普通语句，目前支持 print 和表达式语句。
+fn parseStatement(parser) {
+  if matchType(parser, "PRINT") {
+    return parsePrintStatement(parser);
+  }
+  return parseExpressionStatement(parser);
+}
+
+// 解析 print(表达式); 语句。
+fn parsePrintStatement(parser) {
+  consumeType(parser, "LEFT_PAREN", "print 后需要 '('");
+  let expression = parseExpression(parser);
+  consumeType(parser, "RIGHT_PAREN", "print 表达式后需要 ')'");
+  consumeType(parser, "SEMICOLON", "print 语句末尾需要 ';'");
+  return printStmt(expression);
+}
+
+// 解析表达式语句：expression;
+fn parseExpressionStatement(parser) {
+  let expression = parseExpression(parser);
+  consumeType(parser, "SEMICOLON", "表达式语句末尾需要 ';'");
+  return exprStmt(expression);
+}
+
+// 表达式入口，目前从相等比较开始。
+fn parseExpression(parser) {
+  return parseEquality(parser);
+}
+
+// 解析 == 和 != 表达式。
+fn parseEquality(parser) {
+  let expression = parseComparison(parser);
+  while checkType(parser, "BANG_EQUAL") or checkType(parser, "EQUAL_EQUAL") {
+    let operator = advanceToken(parser);
+    let right = parseComparison(parser);
+    expression = binaryExpr(expression, operator["lexeme"], right);
+  }
+  return expression;
+}
+
+// 解析 >、>=、<、<= 表达式。
+fn parseComparison(parser) {
+  let expression = parseTerm(parser);
+  while checkType(parser, "GREATER") or checkType(parser, "GREATER_EQUAL") or checkType(parser, "LESS") or checkType(parser, "LESS_EQUAL") {
+    let operator = advanceToken(parser);
+    let right = parseTerm(parser);
+    expression = binaryExpr(expression, operator["lexeme"], right);
+  }
+  return expression;
+}
+
+// 解析加减法表达式。
+fn parseTerm(parser) {
+  let expression = parseFactor(parser);
+  while checkType(parser, "MINUS") or checkType(parser, "PLUS") {
+    let operator = advanceToken(parser);
+    let right = parseFactor(parser);
+    expression = binaryExpr(expression, operator["lexeme"], right);
+  }
+  return expression;
+}
+
+// 解析乘除法表达式。
+fn parseFactor(parser) {
+  let expression = parseUnary(parser);
+  while checkType(parser, "SLASH") or checkType(parser, "STAR") {
+    let operator = advanceToken(parser);
+    let right = parseUnary(parser);
+    expression = binaryExpr(expression, operator["lexeme"], right);
+  }
+  return expression;
+}
+
+// 解析 ! 和一元负号表达式。
+fn parseUnary(parser) {
+  if checkType(parser, "BANG") or checkType(parser, "MINUS") {
+    let operator = advanceToken(parser);
+    let right = parseUnary(parser);
+    return unaryExpr(operator["lexeme"], right);
+  }
+  return parsePrimary(parser);
+}
+
+// 解析字面量、变量和括号表达式。
+fn parsePrimary(parser) {
+  if matchType(parser, "FALSE") {
+    return literalExpr(false);
+  }
+  if matchType(parser, "TRUE") {
+    return literalExpr(true);
+  }
+  if matchType(parser, "NIL") {
+    return literalExpr(nil);
+  }
+  if matchType(parser, "NUMBER") {
+    return literalExpr(previousToken(parser)["literal"]);
+  }
+  if matchType(parser, "STRING") {
+    return literalExpr(previousToken(parser)["literal"]);
+  }
+  if matchType(parser, "IDENTIFIER") {
+    return variableExpr(previousToken(parser)["lexeme"]);
+  }
+  if matchType(parser, "LEFT_PAREN") {
+    let expression = parseExpression(parser);
+    consumeType(parser, "RIGHT_PAREN", "括号表达式缺少 ')'");
+    return groupingExpr(expression);
+  }
+
+  let token = peekToken(parser);
+  addParserError(parser, token, "需要表达式");
+  if !isParserAtEnd(parser) {
+    advanceToken(parser);
+  }
+  return literalExpr(nil);
+}

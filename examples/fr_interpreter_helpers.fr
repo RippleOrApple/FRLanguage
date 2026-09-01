@@ -1,0 +1,145 @@
+// 创建自举解释器状态，保存变量环境和输出列表。
+fn createSelfInterpreter() {
+  return {"env": {}, "output": []};
+}
+
+// 运行一段源码：先用 FR Parser 解析，再执行 AST。
+fn runSelfHostedSource(source) {
+  let program = parseSource(source);
+  return runSelfHostedProgram(program);
+}
+
+// 运行 Program AST Map，并返回 print 收集到的输出。
+fn runSelfHostedProgram(program) {
+  let state = createSelfInterpreter();
+  executeProgram(state, program);
+  return state["output"];
+}
+
+// 依次执行 Program 中的每条语句。
+fn executeProgram(state, program) {
+  let statements = program["statements"];
+  let index = 0;
+  while index < len(statements) {
+    executeStatement(state, statements[index]);
+    index = index + 1;
+  }
+}
+
+// 根据语句类型分派到对应执行逻辑。
+fn executeStatement(state, statement) {
+  let statementType = statement["type"];
+  if statementType == "VarStmt" {
+    executeVarStmt(state, statement);
+    return nil;
+  }
+  if statementType == "PrintStmt" {
+    executePrintStmt(state, statement);
+    return nil;
+  }
+  if statementType == "ExprStmt" {
+    evaluateSelfExpr(state, statement["expression"]);
+    return nil;
+  }
+  return nil;
+}
+
+// 执行变量声明，把 initializer 的值保存到环境中。
+fn executeVarStmt(state, statement) {
+  state["env"][statement["name"]] = evaluateSelfExpr(state, statement["initializer"]);
+}
+
+// 执行 print 语句，把字符串化后的值追加到输出列表。
+fn executePrintStmt(state, statement) {
+  let value = evaluateSelfExpr(state, statement["expression"]);
+  push(state["output"], stringifySelfValue(value));
+}
+
+// 计算自举 AST 表达式，并返回运行时值。
+fn evaluateSelfExpr(state, expression) {
+  let expressionType = expression["type"];
+  if expressionType == "LiteralExpr" {
+    return expression["value"];
+  }
+  if expressionType == "VariableExpr" {
+    return state["env"][expression["name"]];
+  }
+  if expressionType == "GroupingExpr" {
+    return evaluateSelfExpr(state, expression["expression"]);
+  }
+  if expressionType == "UnaryExpr" {
+    return evaluateSelfUnaryExpr(state, expression);
+  }
+  if expressionType == "BinaryExpr" {
+    return evaluateSelfBinaryExpr(state, expression);
+  }
+  return nil;
+}
+
+// 计算一元表达式，目前支持 ! 和一元负号。
+fn evaluateSelfUnaryExpr(state, expression) {
+  let right = evaluateSelfExpr(state, expression["right"]);
+  let operator = expression["operator"];
+  if operator == "!" {
+    return !isSelfTruthy(right);
+  }
+  if operator == "-" {
+    return -right;
+  }
+  return nil;
+}
+
+// 计算二元表达式，目前覆盖基础算术、比较和相等判断。
+fn evaluateSelfBinaryExpr(state, expression) {
+  let left = evaluateSelfExpr(state, expression["left"]);
+  let right = evaluateSelfExpr(state, expression["right"]);
+  let operator = expression["operator"];
+
+  if operator == "+" {
+    return left + right;
+  }
+  if operator == "-" {
+    return left - right;
+  }
+  if operator == "*" {
+    return left * right;
+  }
+  if operator == "/" {
+    return left / right;
+  }
+  if operator == ">" {
+    return left > right;
+  }
+  if operator == ">=" {
+    return left >= right;
+  }
+  if operator == "<" {
+    return left < right;
+  }
+  if operator == "<=" {
+    return left <= right;
+  }
+  if operator == "==" {
+    return left == right;
+  }
+  if operator == "!=" {
+    return left != right;
+  }
+  return nil;
+}
+
+// 按 FR 的真假规则判断值是否为真。
+fn isSelfTruthy(value) {
+  if value == nil {
+    return false;
+  }
+  if value == false {
+    return false;
+  }
+  return true;
+}
+
+// 把自举解释器的运行时值转换成 print 输出文本。
+fn stringifySelfValue(value) {
+  return str(value);
+}
