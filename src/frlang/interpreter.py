@@ -1,5 +1,6 @@
 """解释器核心。"""
 
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
@@ -149,6 +150,7 @@ class Interpreter:
         `globals` 保存全局变量和内置函数，`environment` 指向当前作用域。
         `base_path` 是 `readFile` 和 `import` 解析相对路径的起点。
         """
+        self.ensure_recursion_capacity()
         self.globals = Environment()
         self.environment = self.globals
         self.runtime = Runtime()
@@ -156,6 +158,13 @@ class Interpreter:
         self.base_path = Path.cwd() if base_path is None else Path(base_path)
         self.imported_paths: set[Path] = set()
         self.define_native_functions()
+
+    @staticmethod
+    def ensure_recursion_capacity() -> None:
+        """为自举实验提高宿主递归承载能力。"""
+        minimum_limit = 10000
+        if sys.getrecursionlimit() < minimum_limit:
+            sys.setrecursionlimit(minimum_limit)
 
     def interpret(self, program: Program) -> None:
         """执行程序。"""

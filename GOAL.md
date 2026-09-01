@@ -25,6 +25,7 @@
 - FR 写的 Parser 能把小型 FR 程序转换成结构化 AST Map。
 - FR 写的解释器能执行由 FR Parser 产出的 AST Map，至少覆盖变量声明、表达式和 `print`。
 - 存在端到端测试：Python FR 解释器运行 FR 工具链，FR 工具链再处理一个小型 FR 程序，输出和 Python 实现一致。
+- 存在二层自举测试：FR 自解释器执行目标 FR 程序，目标程序再导入 FR bootstrap 并运行默认验收集。
 - 全量测试、编译检查和关键示例运行通过。
 
 ## Constraints
@@ -38,3 +39,4 @@
 
 - 当前最短自举路径是：FR Lexer -> FR Parser 子集 -> FR Interpreter 子集 -> 端到端对照测试。
 - 真正完整自举会很长，阶段产出要保持可运行、可测试、可回退。
+- 当前二层自举仍依赖 Python 宿主承载最外层解释器、内置函数桥接和文件 IO。

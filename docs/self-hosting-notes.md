@@ -35,6 +35,8 @@ examples/fr_lexer_error_demo.fr
 examples/fr_self_host_demo.fr
 examples/fr_bootstrap_suite.fr
 examples/fr_bootstrap_acceptance.fr
+examples/fr_toolchain_self_load_probe.fr
+examples/fr_nested_bootstrap_acceptance.fr.txt
 examples/toolchain/lexer.fr
 examples/toolchain/parser.fr
 examples/toolchain/interpreter.fr
@@ -108,6 +110,18 @@ Python 写的 FR 解释器
 - `failed_count`：失败数量。
 - `cases`：每个目标程序的实际输出、实际错误和期望值。
 
+目前还可以做一层更深的验证：
+
+```txt
+Python 写的 FR 解释器
+  -> 运行 FR 写的自解释器
+  -> 执行 examples/fr_nested_bootstrap_acceptance.fr.txt
+  -> 目标程序导入 examples/toolchain/bootstrap.fr
+  -> 内层 FR bootstrap 跑默认 15 个验收用例
+```
+
+对应测试会检查输出为 `true`、`15`、`0`，表示内层默认验收全部通过。为了支撑这种深层树遍历调用，Python 解释器初始化时会把宿主递归上限提升到一个学习项目可接受的范围。
+
 ## 这个 demo 的限制
 
 - 还没有覆盖 Python Lexer 的全部错误场景和恢复策略。
@@ -115,7 +129,8 @@ Python 写的 FR 解释器
 - 错误处理先用 `ERROR` Token 表达，还没有停止扫描或汇总诊断。
 - 自举 Future 目前是最小 Map 模型，还没有复刻 Python Runtime 队列、reject 状态或 Future 错误传播链。
 - FR 解释器子集还没有覆盖完整错误传播和停止执行策略。
-- 自举 import 目前使用路径字符串做缓存 key，还没有完整的嵌套相对路径基准模型、命名空间和导出控制。
+- 自举 import 目前已经能按目标文件目录解析同级导入，例如 `toolchain/bootstrap.fr` 内部的 `import "lexer.fr";` 会解析到 `toolchain/lexer.fr`；但仍没有路径归一化、命名空间和导出控制。
+- 深层二级自举依然依赖 Python 宿主解释器的调用栈、内置函数桥接和 `readFile` 文件 IO，还不等于完全由 FR 独立运行。
 
 ## 下一步建议
 
@@ -124,5 +139,6 @@ Python 写的 FR 解释器
 - 模块命名空间和导出控制：避免导入文件里的名字全部进入当前环境。
 - 扩展 FR 解释器子集：补更完整的错误传播、Future 错误传播和非法控制流边界。
 - 更完整的 FR Lexer：继续补齐错误场景、错误汇总或更多字面量形式。
+- 长期优化执行模型：减少树遍历解释器对 Python 调用栈的依赖，为更深层自举或 VM 做准备。
 
 当前 helper 文件已经整理成 `examples/toolchain/` 下的正式 FR 工具链组件；旧 helper 路径保留为兼容入口。

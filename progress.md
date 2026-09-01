@@ -93,6 +93,25 @@
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出基础样例和集合样例结果。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 确认提交 `c638447 Add self-hosted bootstrap expectations` 已在当前分支上，工作区起点干净。
+- 开始阶段 27.1：探测 `runSelfHostedSourceResult(readFile("toolchain/bootstrap.fr"))`，发现目标程序中的 `import "lexer.fr";` 会错误解析到 examples 根目录。
+- 扩展 `examples/toolchain/interpreter.fr`：新增 `current_dir`、`runSelfHostedFileResult`、`runSelfHostedSourceResultAtPath`、`runSelfHostedProgramResultAtPath`、`selfDirName`、`selfPathHasDirectory` 和 `resolveSelfImportPath`。
+- 调整 `examples/toolchain/bootstrap.fr`，让 `runBootstrapCase(path)` 使用 `runSelfHostedFileResult(path)`，避免丢失目标文件路径上下文。
+- 新增 `examples/fr_toolchain_self_load_probe.fr`，验证 FR 自解释器可以加载 `toolchain/bootstrap.fr`，输出 `{"output": [], "errors": []}`。
+- 新增 `examples/fr_nested_bootstrap_acceptance.fr.txt`，作为二层自举目标程序：它导入 FR bootstrap 并运行默认 15 个验收用例。
+- 新增 examples 测试，覆盖工具链自加载、二层默认 bootstrap 验收和命令行探针。
+- 二层默认验收第一次暴露 Python 宿主递归上限不足；随后在 `Interpreter` 初始化时通过 `ensure_recursion_capacity()` 提升递归上限，支撑深层树遍历自举实验。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_nested_bootstrap_acceptance`：1 个二层自举验收测试通过，用时约 27 秒。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_self_interpreter_loads_toolchain_bootstrap_file tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_nested_bootstrap_acceptance tests.test_examples.ExampleTest.test_fr_toolchain_self_load_probe_example_runs`：3 个新增测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_toolchain_self_load_probe.fr`：输出 `{"output": [], "errors": []}`。
+- 收紧自举 import 相对路径解析：目标文件在子目录时，导入路径始终相对当前目标文件目录拼接。
+- 重新运行 3 个新增自举测试：全部通过。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：44 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：121 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 最终重新验证 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：121 个测试通过。
 - 开始阶段 24.2：新增 `examples/fr_parser_control_flow_sample.fr.txt`，覆盖 `if`、`else`、`while` 和 block。
 - 新增 FR Parser 控制流对照测试和自解释器控制流端到端测试，先观察到 FR Parser 还无法把 `if/while` 解析成对应 AST。
 - 扩展 `examples/fr_parser_helpers.fr`，新增 `BlockStmt`、`IfStmt` 和 `WhileStmt` AST Map，以及 `parseBlock`、`parseIfStatement`、`parseWhileStatement`。

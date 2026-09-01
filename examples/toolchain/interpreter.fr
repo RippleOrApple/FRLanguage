@@ -3,9 +3,9 @@ fn createSelfEnv(enclosing) {
   return {"values": {}, "enclosing": enclosing};
 }
 
-// 创建自举解释器状态，保存当前环境链和输出列表。
+// 创建自举解释器状态，保存当前环境链、输出、错误、导入缓存和当前文件目录。
 fn createSelfInterpreter() {
-  let state = {"env": createSelfEnv(nil), "output": [], "errors": [], "imports": {}};
+  let state = {"env": createSelfEnv(nil), "output": [], "errors": [], "imports": {}, "current_dir": ""};
   defineSelfNativeFunctions(state);
   return state;
 }
@@ -86,8 +86,18 @@ fn runSelfHostedSource(source) {
 
 // 运行一段源码，并返回输出列表和错误诊断。
 fn runSelfHostedSourceResult(source) {
+  return runSelfHostedSourceResultAtPath(source, "");
+}
+
+// 运行一个目标源码文件，并让目标程序里的 import 相对该文件解析。
+fn runSelfHostedFileResult(path) {
+  return runSelfHostedSourceResultAtPath(readFile(path), path);
+}
+
+// 运行一段带来源路径的源码，来源路径只用于计算 import 的相对目录。
+fn runSelfHostedSourceResultAtPath(source, path) {
   let program = parseSource(source);
-  return runSelfHostedProgramResult(program);
+  return runSelfHostedProgramResultAtPath(program, path);
 }
 
 // 运行 Program AST Map，并返回 print 收集到的输出。
@@ -97,10 +107,37 @@ fn runSelfHostedProgram(program) {
 
 // 运行 Program AST Map，并同时返回输出和错误诊断。
 fn runSelfHostedProgramResult(program) {
+  return runSelfHostedProgramResultAtPath(program, "");
+}
+
+// 运行带来源路径的 Program AST Map，并设置当前文件目录。
+fn runSelfHostedProgramResultAtPath(program, path) {
   let state = createSelfInterpreter();
   state["errors"] = program["errors"];
+  state["current_dir"] = selfDirName(path);
   executeProgram(state, program);
   return {"output": state["output"], "errors": state["errors"]};
+}
+
+// 取出路径中的目录前缀，例如 toolchain/bootstrap.fr -> toolchain/。
+fn selfDirName(path) {
+  let index = len(path) - 1;
+  while index >= 0 {
+    let ch = charAt(path, index);
+    if ch == "/" or ch == "\\" {
+      return substring(path, 0, index + 1);
+    }
+    index = index - 1;
+  }
+  return "";
+}
+
+// 按当前目标文件目录解析 import 路径。
+fn resolveSelfImportPath(state, path) {
+  if state["current_dir"] == "" {
+    return path;
+  }
+  return state["current_dir"] + path;
 }
 
 // 依次执行 Program 中的每条语句。
@@ -185,15 +222,19 @@ fn executeSelfFunctionStmt(state, statement) {
 
 // 执行 import 语句，读取并执行目标文件，同时避免重复导入。
 fn executeSelfImportStmt(state, statement) {
-  let path = statement["path"];
+  let path = resolveSelfImportPath(state, statement["path"]);
   if hasKey(state["imports"], path) {
     return nil;
   }
   state["imports"][path] = true;
 
+  let previousDir = state["current_dir"];
   let program = parseSource(readFile(path));
   appendSelfErrors(state, program["errors"]);
-  return executeProgram(state, program);
+  state["current_dir"] = selfDirName(path);
+  let signal = executeProgram(state, program);
+  state["current_dir"] = previousDir;
+  return signal;
 }
 
 // 把一组错误追加到当前自解释器错误列表中。

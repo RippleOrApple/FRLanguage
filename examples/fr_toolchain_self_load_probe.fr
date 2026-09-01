@@ -1,0 +1,7 @@
+import "toolchain/lexer.fr";
+import "toolchain/parser.fr";
+import "toolchain/interpreter.fr";
+
+let result = runSelfHostedFileResult("toolchain/bootstrap.fr");
+
+print(result);

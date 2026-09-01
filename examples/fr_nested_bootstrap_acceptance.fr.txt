@@ -1,0 +1,7 @@
+import "toolchain/bootstrap.fr";
+
+let result = runDefaultBootstrapExpectations();
+
+print(result["passed"]);
+print(result["case_count"]);
+print(result["failed_count"]);

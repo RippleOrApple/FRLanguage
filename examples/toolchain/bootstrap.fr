@@ -4,7 +4,7 @@ import "interpreter.fr";
 
 // 运行一个自举样例文件，并返回路径、输出和错误诊断。
 fn runBootstrapCase(path) {
-  let result = runSelfHostedSourceResult(readFile(path));
+  let result = runSelfHostedFileResult(path);
   return {
     "path": path,
     "output": result["output"],

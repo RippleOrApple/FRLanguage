@@ -102,6 +102,20 @@ class ExampleTest(unittest.TestCase):
         interpreter.interpret(program)
         return self.normalize_fr_value(interpreter.globals.values["actual"])
 
+    def run_fr_self_interpreter_file_result(self, source_path: str) -> dict[str, Any]:
+        """按文件路径运行 FR 自解释器，并保留目标 import 的相对目录。"""
+        program_source = f"""
+        import "toolchain/lexer.fr";
+        import "toolchain/parser.fr";
+        import "toolchain/interpreter.fr";
+        let actual = runSelfHostedFileResult("{source_path}");
+        """
+        tokens = Lexer(program_source).scan_tokens()
+        program = Parser(tokens).parse()
+        interpreter = Interpreter(base_path=Path("examples"))
+        interpreter.interpret(program)
+        return self.normalize_fr_value(interpreter.globals.values["actual"])
+
     def run_legacy_fr_self_interpreter(self, source_path: str) -> list[str]:
         """通过旧 helper 入口运行自解释器，验证兼容导入仍可用。"""
         program_source = f"""
@@ -798,6 +812,29 @@ class ExampleTest(unittest.TestCase):
         self.assertIn("变量 missing 未定义", output)
         self.assertIn("只能调用函数", output)
         self.assertIn("await 只能用于 Future", output)
+
+    def test_fr_self_interpreter_loads_toolchain_bootstrap_file(self) -> None:
+        """验证 FR 自解释器能按文件路径加载 FR 工具链入口。"""
+        result = self.run_fr_self_interpreter_file_result("toolchain/bootstrap.fr")
+
+        self.assertEqual(result["output"], [])
+        self.assertEqual(result["errors"], [])
+
+    def test_fr_self_interpreter_runs_nested_bootstrap_acceptance(self) -> None:
+        """验证目标程序能导入 FR bootstrap，并由内层工具链跑默认验收。"""
+        result = self.run_fr_self_interpreter_file_result(
+            "fr_nested_bootstrap_acceptance.fr.txt"
+        )
+
+        self.assertEqual(result["output"], ["true", "15", "0"])
+        self.assertEqual(result["errors"], [])
+
+    def test_fr_toolchain_self_load_probe_example_runs(self) -> None:
+        """验证工具链自加载探针可以通过命令行运行。"""
+        output = self.run_example("examples/fr_toolchain_self_load_probe.fr")
+
+        self.assertIn('"output": []', output)
+        self.assertIn('"errors": []', output)
 
     def test_legacy_fr_toolchain_helper_imports_still_work(self) -> None:
         """验证旧 helper 文件仍会导入新的 toolchain 组件。"""
