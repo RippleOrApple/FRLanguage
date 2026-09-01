@@ -329,7 +329,7 @@ fr_lexer.fr
 - Python Lexer 和 FR Lexer 在测试样例上结果一致。
 - FR Parser 子集能输出结构化 AST Map，并和 Python Parser 子集对齐。
 - FR 解释器子集能运行小型 FR 程序，输出和 Python 实现一致。
-- FR Parser/Interpreter 子集应逐步扩展，当前已覆盖集合字面量、索引读写、逻辑短路、控制流、`break`、函数、常用内置函数桥接、block 局部作用域、闭包读取、跨函数全局调用、最小 `future/await` 和基础运行时错误诊断，下一步重点是补更完整错误传播和更正式的工具链组织。
+- FR Parser/Interpreter 子集应逐步扩展，当前已覆盖集合字面量、索引读写、逻辑短路、控制流、`break`、函数、常用内置函数桥接、block 局部作用域、闭包读取、跨函数全局调用、最小 `future/await`、基础运行时错误诊断和非法控制流诊断，下一步重点是补更完整错误传播。
 - 对照测试应逐步覆盖基础源码、关键字、集合字面量、运算符和错误场景。
 - 在 FR 没有异常机制前，词法错误可以先用 `ERROR` Token 表达。
 

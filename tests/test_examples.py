@@ -715,6 +715,50 @@ class ExampleTest(unittest.TestCase):
             ],
         )
 
+    def test_fr_self_interpreter_reports_invalid_top_level_return(self) -> None:
+        """验证顶层 return 会被自解释器记录为非法控制流。"""
+        result = self.run_fr_self_interpreter_result(
+            "fr_parser_top_level_return_error_sample.fr.txt"
+        )
+
+        self.assertEqual(
+            [error["message"] for error in result["errors"]],
+            ["return 只能用于函数"],
+        )
+
+    def test_fr_self_interpreter_reports_invalid_top_level_break(self) -> None:
+        """验证顶层 break 会被自解释器记录为非法控制流。"""
+        result = self.run_fr_self_interpreter_result(
+            "fr_parser_top_level_break_error_sample.fr.txt"
+        )
+
+        self.assertEqual(
+            [error["message"] for error in result["errors"]],
+            ["break 只能用于 while 循环"],
+        )
+
+    def test_fr_self_interpreter_reports_invalid_function_break(self) -> None:
+        """验证函数中未被 while 捕获的 break 会记录错误。"""
+        result = self.run_fr_self_interpreter_result(
+            "fr_parser_function_break_error_sample.fr.txt"
+        )
+
+        self.assertEqual(
+            [error["message"] for error in result["errors"]],
+            ["break 只能用于 while 循环"],
+        )
+
+    def test_fr_self_interpreter_reports_invalid_future_break(self) -> None:
+        """验证 Future 中未被 while 捕获的 break 会记录错误。"""
+        result = self.run_fr_self_interpreter_result(
+            "fr_parser_future_break_error_sample.fr.txt"
+        )
+
+        self.assertEqual(
+            [error["message"] for error in result["errors"]],
+            ["break 只能用于 while 循环"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

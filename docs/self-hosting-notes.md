@@ -58,6 +58,10 @@ examples/fr_parser_break_sample.fr.txt
 examples/fr_parser_future_sample.fr.txt
 examples/fr_parser_builtins_sample.fr.txt
 examples/fr_parser_error_sample.fr.txt
+examples/fr_parser_top_level_return_error_sample.fr.txt
+examples/fr_parser_top_level_break_error_sample.fr.txt
+examples/fr_parser_function_break_error_sample.fr.txt
+examples/fr_parser_future_break_error_sample.fr.txt
 ```
 
 它读取并扫描这段源码：
@@ -89,7 +93,7 @@ Python 写的 FR 解释器
   -> 输出和 Python 原生链路一致
 ```
 
-这个闭环暂时覆盖变量声明、`print`、字面量、变量读取、括号、一元表达式、基础二元表达式、`and/or` 短路逻辑、List/Map 字面量、索引读取、变量赋值、索引赋值、`if`、`while`、`break`、block 局部作用域、函数声明、函数调用、常用内置函数桥接、闭包读取、跨函数全局调用、递归、`return`、最小 `future/await` 和基础运行时错误诊断。
+这个闭环暂时覆盖变量声明、`print`、字面量、变量读取、括号、一元表达式、基础二元表达式、`and/or` 短路逻辑、List/Map 字面量、索引读取、变量赋值、索引赋值、`if`、`while`、`break`、block 局部作用域、函数声明、函数调用、常用内置函数桥接、闭包读取、跨函数全局调用、递归、`return`、最小 `future/await`、基础运行时错误诊断和非法控制流诊断。
 
 ## 这个 demo 的限制
 
@@ -97,7 +101,7 @@ Python 写的 FR 解释器
 - 字符串扫描已经支持少量常用转义，但还没有 Unicode 转义、十六进制转义等扩展形式。
 - 错误处理先用 `ERROR` Token 表达，还没有停止扫描或汇总诊断。
 - 自举 Future 目前是最小 Map 模型，还没有复刻 Python Runtime 队列、reject 状态或 Future 错误传播链。
-- FR 解释器子集还没有覆盖完整错误传播、停止执行策略和所有非法控制流边界。
+- FR 解释器子集还没有覆盖完整错误传播和停止执行策略。
 - 模块系统还没有命名空间和导出控制。
 
 ## 下一步建议

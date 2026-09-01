@@ -49,6 +49,8 @@
 - 在 FR 还没有异常机制前，自举运行时错误先进入 `state["errors"]` 列表；这能先解决可观察性，后续再补“错误后是否停止执行”的语义。
 - 把 FR 工具链核心文件放入 `examples/toolchain/` 后，测试可以直接导入正式组件；旧 helper 路径只作为兼容入口继续存在。
 - 由于当前 `import` 禁止从子目录逃逸到父目录，兼容入口应放在 `examples/` 根目录向下导入 `toolchain/`，而不是在 `toolchain/` 内向上导入旧 helper。
+- 自举解释器可以用 `reportUnhandledSelfSignal` 统一处理跑出合法边界的控制流信号：程序入口负责顶层 `return/break`，函数和 Future 边界负责未被 while 消费的 `break`。
+- 当前错误策略仍是“记录后继续/返回 nil”，尚未完全复刻 Python 解释器遇到运行时错误即停止执行的行为。
 
 ## 路线判断
 

@@ -1,0 +1,6 @@
+let task = future {
+  break;
+  return 1;
+};
+
+print(await task);

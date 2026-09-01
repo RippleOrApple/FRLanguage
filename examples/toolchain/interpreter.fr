@@ -110,9 +110,23 @@ fn executeProgram(state, program) {
   while index < len(statements) {
     let signal = executeStatement(state, statements[index]);
     if signal != nil {
+      reportUnhandledSelfSignal(state, signal);
       return signal;
     }
     index = index + 1;
+  }
+  return nil;
+}
+
+// 把跑出合法边界的控制流信号转换成运行时错误诊断。
+fn reportUnhandledSelfSignal(state, signal) {
+  if signal["type"] == "ReturnSignal" {
+    addSelfRuntimeError(state, "return 只能用于函数");
+    return nil;
+  }
+  if signal["type"] == "BreakSignal" {
+    addSelfRuntimeError(state, "break 只能用于 while 循环");
+    return nil;
   }
   return nil;
 }
@@ -383,6 +397,9 @@ fn runSelfFuture(state, futureValue) {
     futureValue["value"] = signal["value"];
     return nil;
   }
+  if signal != nil and signal["type"] == "BreakSignal" {
+    addSelfRuntimeError(state, "break 只能用于 while 循环");
+  }
   futureValue["value"] = nil;
   return nil;
 }
@@ -471,6 +488,7 @@ fn callSelfFunction(state, functionValue, arguments) {
 
   if signal != nil {
     if signal["type"] != "ReturnSignal" {
+      reportUnhandledSelfSignal(state, signal);
       return nil;
     }
     return signal["value"];

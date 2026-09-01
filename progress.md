@@ -128,6 +128,16 @@
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 开始阶段 25.3：新增顶层 `return`、顶层 `break`、函数裸 `break` 和 Future 裸 `break` 错误样例。
+- 新增四个自解释器错误诊断测试；前三个先按预期失败，暴露非法控制流信号会跑出边界但不会进入错误列表。
+- 扩展 `examples/toolchain/interpreter.fr`，新增 `reportUnhandledSelfSignal`，在程序入口、函数调用和 Future 执行边界把未处理的 `ReturnSignal` / `BreakSignal` 转成运行时错误诊断。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_self_interpreter_reports_invalid_top_level_break tests.test_examples.ExampleTest.test_fr_self_interpreter_reports_invalid_top_level_return tests.test_examples.ExampleTest.test_fr_self_interpreter_reports_invalid_function_break tests.test_examples.ExampleTest.test_fr_self_interpreter_reports_invalid_future_break`：4 个非法控制流诊断测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：35 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：正常自举 demo 仍输出九个样例结果。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：112 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
 - 开始阶段 25.4：创建 `examples/toolchain/`，把 FR 写的 Lexer、Parser 和 Interpreter 核心组件整理到正式目录。
 - 使用 `git mv` 将 `examples/fr_lexer_helpers.fr`、`examples/fr_parser_helpers.fr` 和 `examples/fr_interpreter_helpers.fr` 分别移动为 `examples/toolchain/lexer.fr`、`examples/toolchain/parser.fr` 和 `examples/toolchain/interpreter.fr`。
 - 在旧 helper 路径保留兼容入口，继续向下导入 `toolchain/` 中的新文件。
