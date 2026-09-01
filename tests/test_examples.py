@@ -7,6 +7,7 @@ from typing import Any
 from frlang.ast import (
     AssignExpr,
     BinaryExpr,
+    BreakStmt,
     BlockStmt,
     CallExpr,
     Expr,
@@ -151,6 +152,8 @@ class ExampleTest(unittest.TestCase):
                 "condition": self.normalize_python_expr(statement.condition),
                 "body": self.normalize_python_stmt(statement.body),
             }
+        if isinstance(statement, BreakStmt):
+            return {"type": "BreakStmt"}
         if isinstance(statement, FunctionStmt):
             return {
                 "type": "FunctionStmt",
@@ -586,6 +589,24 @@ class ExampleTest(unittest.TestCase):
     def test_fr_self_interpreter_runs_logic_program(self) -> None:
         """验证 FR 写的解释器子集能按短路规则执行 and/or。"""
         source_path = "fr_parser_logic_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_self_interpreter(source_path),
+            self.python_program_output(source_path),
+        )
+
+    def test_fr_parser_matches_python_parser_for_break_program(self) -> None:
+        """验证 FR Parser 子集能解析 break 语句 AST。"""
+        source_path = "fr_parser_break_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_parser(source_path),
+            self.python_parser_ast(source_path),
+        )
+
+    def test_fr_self_interpreter_runs_break_program(self) -> None:
+        """验证 FR 写的解释器子集能在 while 中处理 break。"""
+        source_path = "fr_parser_break_sample.fr.txt"
 
         self.assertEqual(
             self.run_fr_self_interpreter(source_path),

@@ -152,6 +152,11 @@ fn whileStmt(condition, body) {
   return {"type": "WhileStmt", "condition": condition, "body": body};
 }
 
+// 创建 break 语句 AST Map。
+fn breakStmt() {
+  return {"type": "BreakStmt"};
+}
+
 // 创建函数声明语句 AST Map。
 fn functionStmt(name, params, body) {
   return {"type": "FunctionStmt", "name": name, "params": params, "body": body};
@@ -225,13 +230,16 @@ fn parseVarDeclaration(parser) {
   return varStmt(name["lexeme"], initializer);
 }
 
-// 解析普通语句，支持 print、return、if、while、block 和表达式语句。
+// 解析普通语句，支持 print、return、break、if、while、block 和表达式语句。
 fn parseStatement(parser) {
   if matchType(parser, "PRINT") {
     return parsePrintStatement(parser);
   }
   if matchType(parser, "RETURN") {
     return parseReturnStatement(parser);
+  }
+  if matchType(parser, "BREAK") {
+    return parseBreakStatement(parser);
   }
   if matchType(parser, "IF") {
     return parseIfStatement(parser);
@@ -253,6 +261,12 @@ fn parseReturnStatement(parser) {
   }
   consumeType(parser, "SEMICOLON", "return 语句末尾需要 ';'");
   return returnStmt(value);
+}
+
+// 解析 break 语句，运行时由 while 负责接住信号。
+fn parseBreakStatement(parser) {
+  consumeType(parser, "SEMICOLON", "break 语句末尾需要 ';'");
+  return breakStmt();
 }
 
 // 解析 if/else 条件分支语句。

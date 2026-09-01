@@ -85,6 +85,9 @@ fn executeStatement(state, statement) {
   if statementType == "ReturnStmt" {
     return executeSelfReturnStmt(state, statement);
   }
+  if statementType == "BreakStmt" {
+    return executeSelfBreakStmt(state, statement);
+  }
   if statementType == "PrintStmt" {
     executePrintStmt(state, statement);
     return nil;
@@ -123,6 +126,11 @@ fn executeSelfReturnStmt(state, statement) {
     value = evaluateSelfExpr(state, statement["value"]);
   }
   return {"type": "ReturnSignal", "value": value};
+}
+
+// 执行 break 语句，用信号 Map 交给最近的 while 处理。
+fn executeSelfBreakStmt(state, statement) {
+  return {"type": "BreakSignal"};
 }
 
 // 执行变量声明，把 initializer 的值保存到环境中。
@@ -174,6 +182,9 @@ fn executeSelfWhileStmt(state, statement) {
   while isSelfTruthy(evaluateSelfExpr(state, statement["condition"])) {
     let signal = executeStatement(state, statement["body"]);
     if signal != nil {
+      if signal["type"] == "BreakSignal" {
+        return nil;
+      }
       return signal;
     }
   }
@@ -295,6 +306,9 @@ fn callSelfFunction(state, functionValue, arguments) {
   state["env"] = previousEnv;
 
   if signal != nil {
+    if signal["type"] != "ReturnSignal" {
+      return nil;
+    }
     return signal["value"];
   }
   return nil;

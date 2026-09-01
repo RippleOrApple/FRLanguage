@@ -1,0 +1,25 @@
+let i = 0;
+let total = 0;
+
+while i < 10 {
+  i = i + 1;
+  if i == 4 {
+    break;
+  }
+  total = total + i;
+}
+
+fn stopAtTwo(limit) {
+  let value = 0;
+  while value < limit {
+    value = value + 1;
+    if value == 2 {
+      break;
+    }
+  }
+  return value;
+}
+
+print(i);
+print(total);
+print(stopAtTwo(5));

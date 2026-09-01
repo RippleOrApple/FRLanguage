@@ -128,6 +128,19 @@
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 提交并推送阶段 24.5：`48a0107 Add self-hosted logical expressions`。
+- 开始阶段 24.6：新增 `examples/fr_parser_break_sample.fr.txt`，覆盖顶层 while 和函数内部 while 的 `break`。
+- 新增 FR Parser break 对照测试和自解释器 break 端到端测试；新增测试先按预期失败，暴露 `break;` 被解析成占位表达式且循环无法提前停止。
+- 扩展 `examples/fr_parser_helpers.fr`，新增 `BreakStmt` AST Map 和 `parseBreakStatement`。
+- 扩展 `examples/fr_interpreter_helpers.fr`，新增 `BreakSignal` Map，block/if 传递信号，while 消费信号。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_break_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_break_program`：2 个 break 自举测试通过。
+- 扩展 `examples/fr_self_host_demo.fr`，新增 break 样例输出 `[4, 6, 2]`。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：25 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出基础、集合、控制流、函数、作用域、逻辑短路和 break 七个自举样例结果。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：102 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
 - 提交并推送阶段 24.4：`dec9b50 Add self-hosted environment chain`。
 - 开始阶段 24.5：新增 `examples/fr_parser_logic_sample.fr.txt`，用 `mark` 函数副作用验证 `and/or` 是否真正短路。
 - 新增 FR Parser 逻辑表达式对照测试和自解释器逻辑短路端到端测试；新增测试先按预期失败，暴露 Parser 缺少 `and/or` 优先级层以及 Interpreter 预先求右侧的问题。
