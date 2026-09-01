@@ -22,7 +22,11 @@ FRLanguage/
 │  ├─ fr_parser_helpers.fr
 │  ├─ fr_interpreter_helpers.fr
 │  ├─ fr_self_host_demo.fr
-│  └─ future.fr
+│  ├─ future.fr
+│  └─ toolchain/
+│     ├─ lexer.fr
+│     ├─ parser.fr
+│     └─ interpreter.fr
 ├─ src/
 │  └─ frlang/
 │     ├─ __init__.py
@@ -160,7 +164,20 @@ Future 对象。
 - 展示语法
 - 辅助手动测试
 - 作为文档补充
-- 保存 FR 写的工具链 demo，例如 Lexer、Parser 子集和解释器子集
+- 保存 FR 写的工具链 demo 和自举样例
+
+## `examples/toolchain/`
+
+FR 写的工具链核心组件。
+
+职责：
+
+- `lexer.fr`：用 FR 扫描源码并生成结构化 Token List。
+- `parser.fr`：用 FR 把 Token List 转成 AST Map。
+- `interpreter.fr`：用 FR 执行 AST Map，并返回输出和基础错误诊断。
+- 支撑 `fr_self_host_demo.fr` 和 `tests/test_examples.py` 中的端到端自举对照。
+
+`examples/fr_lexer_helpers.fr`、`examples/fr_parser_helpers.fr` 和 `examples/fr_interpreter_helpers.fr` 目前保留为兼容入口，它们会导入 `toolchain/` 下的新文件。
 
 ## `tests/`
 

@@ -355,10 +355,10 @@ FR 程序
 
 阶段产出：
 
-- `fr_interpreter.fr`
+- `examples/toolchain/interpreter.fr`
 - 自举示例程序
 - 对比测试
-- 当前已有 `fr_interpreter_helpers.fr` 作为解释器子集雏形。
+- 当前已有 `examples/toolchain/lexer.fr`、`examples/toolchain/parser.fr` 和 `examples/toolchain/interpreter.fr` 作为自举工具链核心组件。
 
 完成标准：
 
@@ -436,4 +436,4 @@ FR 源码
 
 - FR Lexer、Parser 子集和 Interpreter 子集已经打通最小自举闭环。
 - 当前自解释器已经具备环境链、函数闭包读取、break、常用内置函数桥接、最小 Future 和基础错误诊断。
-- 下一块应让失败路径更清楚，并逐步把 helper 文件整理成正式 FR 工具链组件。
+- 工具链文件已经整理到 `examples/toolchain/`，下一块应让失败路径更清楚。

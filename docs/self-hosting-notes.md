@@ -32,10 +32,13 @@ FR 现在已经具备一批写 Lexer demo 需要的基础能力：
 ```txt
 examples/fr_lexer_demo.fr
 examples/fr_lexer_error_demo.fr
+examples/fr_self_host_demo.fr
+examples/toolchain/lexer.fr
+examples/toolchain/parser.fr
+examples/toolchain/interpreter.fr
 examples/fr_lexer_helpers.fr
 examples/fr_parser_helpers.fr
 examples/fr_interpreter_helpers.fr
-examples/fr_self_host_demo.fr
 examples/fr_lexer_bad_char_sample.fr.txt
 examples/fr_lexer_error_sample.fr.txt
 examples/fr_lexer_unterminated_string_sample.fr.txt
@@ -105,4 +108,4 @@ Python 写的 FR 解释器
 - 扩展 FR 解释器子集：补更完整的错误传播、Future 错误传播和非法控制流边界。
 - 更完整的 FR Lexer：继续补齐错误场景、错误汇总或更多字面量形式。
 
-这些能力完成后，可以把当前 helper 文件整理成更正式的 FR 工具链目录。
+当前 helper 文件已经整理成 `examples/toolchain/` 下的正式 FR 工具链组件；旧 helper 路径保留为兼容入口。

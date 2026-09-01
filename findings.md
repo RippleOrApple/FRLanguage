@@ -47,6 +47,8 @@
 - 常用内置函数桥接后，自解释器运行目标程序时可以覆盖字符串处理、集合修改、Map membership、类型查询、转换和文件读取这批自举工具链高频能力。
 - `runSelfHostedSourceResult` 比只返回输出的 `runSelfHostedSource` 更适合后续测试错误路径；正常 demo 仍可继续使用输出列表，避免打扰已有学习示例。
 - 在 FR 还没有异常机制前，自举运行时错误先进入 `state["errors"]` 列表；这能先解决可观察性，后续再补“错误后是否停止执行”的语义。
+- 把 FR 工具链核心文件放入 `examples/toolchain/` 后，测试可以直接导入正式组件；旧 helper 路径只作为兼容入口继续存在。
+- 由于当前 `import` 禁止从子目录逃逸到父目录，兼容入口应放在 `examples/` 根目录向下导入 `toolchain/`，而不是在 `toolchain/` 内向上导入旧 helper。
 
 ## 路线判断
 

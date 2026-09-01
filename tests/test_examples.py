@@ -51,7 +51,7 @@ class ExampleTest(unittest.TestCase):
     def run_fr_lexer(self, source_path: str) -> list[dict[str, Any]]:
         """运行 FR 写的 Lexer，并把内部 Map/List 结果转换成 Python 值。"""
         program_source = f"""
-        import "fr_lexer_helpers.fr";
+        import "toolchain/lexer.fr";
         let actual = scan(readFile("{source_path}"));
         """
         tokens = Lexer(program_source).scan_tokens()
@@ -63,8 +63,8 @@ class ExampleTest(unittest.TestCase):
     def run_fr_parser(self, source_path: str) -> dict[str, Any]:
         """运行 FR 写的 Parser 子集，并返回转换后的 AST Map。"""
         program_source = f"""
-        import "fr_lexer_helpers.fr";
-        import "fr_parser_helpers.fr";
+        import "toolchain/lexer.fr";
+        import "toolchain/parser.fr";
         let actual = parseSource(readFile("{source_path}"));
         """
         tokens = Lexer(program_source).scan_tokens()
@@ -76,9 +76,9 @@ class ExampleTest(unittest.TestCase):
     def run_fr_self_interpreter(self, source_path: str) -> list[str]:
         """运行 FR 写的解释器子集，并返回它收集的输出列表。"""
         program_source = f"""
-        import "fr_lexer_helpers.fr";
-        import "fr_parser_helpers.fr";
-        import "fr_interpreter_helpers.fr";
+        import "toolchain/lexer.fr";
+        import "toolchain/parser.fr";
+        import "toolchain/interpreter.fr";
         let actual = runSelfHostedSource(readFile("{source_path}"));
         """
         tokens = Lexer(program_source).scan_tokens()
@@ -90,10 +90,24 @@ class ExampleTest(unittest.TestCase):
     def run_fr_self_interpreter_result(self, source_path: str) -> dict[str, Any]:
         """运行 FR 写的解释器子集，并返回输出和错误诊断。"""
         program_source = f"""
+        import "toolchain/lexer.fr";
+        import "toolchain/parser.fr";
+        import "toolchain/interpreter.fr";
+        let actual = runSelfHostedSourceResult(readFile("{source_path}"));
+        """
+        tokens = Lexer(program_source).scan_tokens()
+        program = Parser(tokens).parse()
+        interpreter = Interpreter(base_path=Path("examples"))
+        interpreter.interpret(program)
+        return self.normalize_fr_value(interpreter.globals.values["actual"])
+
+    def run_legacy_fr_self_interpreter(self, source_path: str) -> list[str]:
+        """通过旧 helper 入口运行自解释器，验证兼容导入仍可用。"""
+        program_source = f"""
         import "fr_lexer_helpers.fr";
         import "fr_parser_helpers.fr";
         import "fr_interpreter_helpers.fr";
-        let actual = runSelfHostedSourceResult(readFile("{source_path}"));
+        let actual = runSelfHostedSource(readFile("{source_path}"));
         """
         tokens = Lexer(program_source).scan_tokens()
         program = Parser(tokens).parse()
@@ -675,6 +689,15 @@ class ExampleTest(unittest.TestCase):
 
         self.assertEqual(
             self.run_fr_self_interpreter(source_path),
+            self.python_program_output(source_path),
+        )
+
+    def test_legacy_fr_toolchain_helper_imports_still_work(self) -> None:
+        """验证旧 helper 文件仍会导入新的 toolchain 组件。"""
+        source_path = "fr_parser_basic_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_legacy_fr_self_interpreter(source_path),
             self.python_program_output(source_path),
         )
 

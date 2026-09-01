@@ -128,6 +128,19 @@
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 开始阶段 25.4：创建 `examples/toolchain/`，把 FR 写的 Lexer、Parser 和 Interpreter 核心组件整理到正式目录。
+- 使用 `git mv` 将 `examples/fr_lexer_helpers.fr`、`examples/fr_parser_helpers.fr` 和 `examples/fr_interpreter_helpers.fr` 分别移动为 `examples/toolchain/lexer.fr`、`examples/toolchain/parser.fr` 和 `examples/toolchain/interpreter.fr`。
+- 在旧 helper 路径保留兼容入口，继续向下导入 `toolchain/` 中的新文件。
+- 更新 `examples/fr_lexer_demo.fr`、`examples/fr_lexer_error_demo.fr`、`examples/fr_self_host_demo.fr` 和 examples 测试，优先从 `toolchain/` 导入正式组件。
+- 新增旧 helper 兼容导入测试，确认学习材料中的旧入口仍可使用。
+- 更新 README、项目结构说明、自举准备笔记、路线图、任务计划和发现记录，说明 `examples/toolchain/` 已成为 FR 工具链核心目录。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：31 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：通过，正式 `toolchain/` 入口能运行九个自举样例。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_demo.fr`：通过，Lexer demo 已从 `toolchain/lexer.fr` 导入。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：108 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
 - 提交并推送阶段 25.1：`4966abf Add self-hosted native bridge`。
 - 开始阶段 25.2：新增 `examples/fr_parser_error_sample.fr.txt`，覆盖缺失变量、非法调用和非法 await。
 - 新增 `run_fr_self_interpreter_result` 测试 helper，用来读取 FR 自解释器返回的输出和错误列表。

@@ -21,6 +21,12 @@ FRLanguage 是一个使用 Python 编写的教学型小语言项目。目标不�
 - [Future 和 await 说明](docs/future.md)
 - [自举准备笔记](docs/self-hosting-notes.md)
 
+FR 写的工具链核心组件已经整理到 `examples/toolchain/`：
+
+- `examples/toolchain/lexer.fr`
+- `examples/toolchain/parser.fr`
+- `examples/toolchain/interpreter.fr`
+
 ## 当前支持的语法
 
 - 变量声明：`let x = 1;`

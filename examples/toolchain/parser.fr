@@ -1,0 +1,539 @@
+// 创建 Parser 状态，保存 Token 列表、当前位置和错误列表。
+fn createParser(tokens) {
+  return {"tokens": tokens, "current": 0, "errors": []};
+}
+
+// 读取当前 Token，但不移动 Parser 游标。
+fn peekToken(parser) {
+  return parser["tokens"][parser["current"]];
+}
+
+// 读取刚刚消费过的 Token。
+fn previousToken(parser) {
+  return parser["tokens"][parser["current"] - 1];
+}
+
+// 判断 Parser 是否已经读到 EOF。
+fn isParserAtEnd(parser) {
+  return peekToken(parser)["type"] == "EOF";
+}
+
+// 判断当前 Token 是否是指定类型。
+fn checkType(parser, tokenType) {
+  if isParserAtEnd(parser) {
+    return tokenType == "EOF";
+  }
+  return peekToken(parser)["type"] == tokenType;
+}
+
+// 消费当前 Token，并把 Parser 游标向后移动一格。
+fn advanceToken(parser) {
+  if !isParserAtEnd(parser) {
+    parser["current"] = parser["current"] + 1;
+  }
+  return previousToken(parser);
+}
+
+// 如果当前 Token 类型匹配，就消费它并返回 true。
+fn matchType(parser, tokenType) {
+  if checkType(parser, tokenType) {
+    advanceToken(parser);
+    return true;
+  }
+  return false;
+}
+
+// 记录 Parser 错误，后续测试可以读取 errors 字段。
+fn addParserError(parser, token, message) {
+  push(parser["errors"], {
+    "message": message,
+    "line": token["line"],
+    "column": token["column"]
+  });
+}
+
+// 消费指定类型 Token；不匹配时记录错误并返回当前 Token。
+fn consumeType(parser, tokenType, message) {
+  if checkType(parser, tokenType) {
+    return advanceToken(parser);
+  }
+  let token = peekToken(parser);
+  addParserError(parser, token, message);
+  return token;
+}
+
+// 创建字面量表达式 AST Map。
+fn literalExpr(value) {
+  return {"type": "LiteralExpr", "value": value};
+}
+
+// 创建变量读取表达式 AST Map。
+fn variableExpr(name) {
+  return {"type": "VariableExpr", "name": name};
+}
+
+// 创建括号表达式 AST Map。
+fn groupingExpr(expression) {
+  return {"type": "GroupingExpr", "expression": expression};
+}
+
+// 创建一元表达式 AST Map。
+fn unaryExpr(operator, right) {
+  return {"type": "UnaryExpr", "operator": operator, "right": right};
+}
+
+// 创建 await 表达式 AST Map。
+fn awaitExpr(expression) {
+  return {"type": "AwaitExpr", "expression": expression};
+}
+
+// 创建 future 块表达式 AST Map。
+fn futureExpr(body) {
+  return {"type": "FutureExpr", "body": body};
+}
+
+// 创建二元表达式 AST Map。
+fn binaryExpr(left, operator, right) {
+  return {"type": "BinaryExpr", "left": left, "operator": operator, "right": right};
+}
+
+// 创建 List 字面量表达式 AST Map。
+fn listExpr(elements) {
+  return {"type": "ListExpr", "elements": elements};
+}
+
+// 创建 Map 字面量表达式 AST Map。
+fn mapExpr(entries) {
+  return {"type": "MapExpr", "entries": entries};
+}
+
+// 创建 Map 字面量中的一组 key/value AST Map。
+fn mapEntry(key, value) {
+  return {"key": key, "value": value};
+}
+
+// 创建索引读取表达式 AST Map。
+fn indexExpr(target, index) {
+  return {"type": "IndexExpr", "target": target, "index": index};
+}
+
+// 创建变量赋值表达式 AST Map。
+fn assignExpr(name, value) {
+  return {"type": "AssignExpr", "name": name, "value": value};
+}
+
+// 创建索引赋值表达式 AST Map。
+fn indexAssignExpr(target, index, value) {
+  return {"type": "IndexAssignExpr", "target": target, "index": index, "value": value};
+}
+
+// 创建变量声明语句 AST Map。
+fn varStmt(name, initializer) {
+  return {"type": "VarStmt", "name": name, "initializer": initializer};
+}
+
+// 创建 print 语句 AST Map。
+fn printStmt(expression) {
+  return {"type": "PrintStmt", "expression": expression};
+}
+
+// 创建表达式语句 AST Map。
+fn exprStmt(expression) {
+  return {"type": "ExprStmt", "expression": expression};
+}
+
+// 创建 block 语句 AST Map。
+fn blockStmt(statements) {
+  return {"type": "BlockStmt", "statements": statements};
+}
+
+// 创建 if 语句 AST Map。
+fn ifStmt(condition, thenBranch, elseBranch) {
+  return {
+    "type": "IfStmt",
+    "condition": condition,
+    "then_branch": thenBranch,
+    "else_branch": elseBranch
+  };
+}
+
+// 创建 while 语句 AST Map。
+fn whileStmt(condition, body) {
+  return {"type": "WhileStmt", "condition": condition, "body": body};
+}
+
+// 创建 break 语句 AST Map。
+fn breakStmt() {
+  return {"type": "BreakStmt"};
+}
+
+// 创建函数声明语句 AST Map。
+fn functionStmt(name, params, body) {
+  return {"type": "FunctionStmt", "name": name, "params": params, "body": body};
+}
+
+// 创建 return 语句 AST Map。
+fn returnStmt(value) {
+  return {"type": "ReturnStmt", "value": value};
+}
+
+// 创建函数调用表达式 AST Map。
+fn callExpr(callee, arguments) {
+  return {"type": "CallExpr", "callee": callee, "arguments": arguments};
+}
+
+// 把源码字符串先交给 FR Lexer，再解析成 Program AST Map。
+fn parseSource(source) {
+  return parseTokens(scan(source));
+}
+
+// 解析 Token 列表，返回最外层 Program AST Map。
+fn parseTokens(tokens) {
+  let parser = createParser(tokens);
+  let statements = [];
+  while !isParserAtEnd(parser) {
+    push(statements, parseDeclaration(parser));
+  }
+  return {"type": "Program", "statements": statements, "errors": parser["errors"]};
+}
+
+// 解析声明级语法，支持函数声明和变量声明。
+fn parseDeclaration(parser) {
+  if matchType(parser, "FN") {
+    return parseFunctionDeclaration(parser);
+  }
+  if matchType(parser, "LET") {
+    return parseVarDeclaration(parser);
+  }
+  return parseStatement(parser);
+}
+
+// 解析函数声明：fn name(param, ...) { ... }
+fn parseFunctionDeclaration(parser) {
+  let name = consumeType(parser, "IDENTIFIER", "函数声明需要函数名");
+  consumeType(parser, "LEFT_PAREN", "函数名后需要 '('");
+
+  let params = [];
+  if !checkType(parser, "RIGHT_PAREN") {
+    while true {
+      let param = consumeType(parser, "IDENTIFIER", "函数参数需要参数名");
+      push(params, param["lexeme"]);
+      if !matchType(parser, "COMMA") {
+        break;
+      }
+    }
+  }
+
+  consumeType(parser, "RIGHT_PAREN", "函数参数后需要 ')'");
+  consumeType(parser, "LEFT_BRACE", "函数体前需要 '{'");
+  return functionStmt(name["lexeme"], params, parseBlock(parser));
+}
+
+// 解析变量声明：let name = expression;
+fn parseVarDeclaration(parser) {
+  let name = consumeType(parser, "IDENTIFIER", "变量声明需要变量名");
+  let initializer = nil;
+  if matchType(parser, "EQUAL") {
+    initializer = parseExpression(parser);
+  }
+  consumeType(parser, "SEMICOLON", "变量声明末尾需要 ';'");
+  return varStmt(name["lexeme"], initializer);
+}
+
+// 解析普通语句，支持 print、return、break、if、while、block 和表达式语句。
+fn parseStatement(parser) {
+  if matchType(parser, "PRINT") {
+    return parsePrintStatement(parser);
+  }
+  if matchType(parser, "RETURN") {
+    return parseReturnStatement(parser);
+  }
+  if matchType(parser, "BREAK") {
+    return parseBreakStatement(parser);
+  }
+  if matchType(parser, "IF") {
+    return parseIfStatement(parser);
+  }
+  if matchType(parser, "WHILE") {
+    return parseWhileStatement(parser);
+  }
+  if matchType(parser, "LEFT_BRACE") {
+    return blockStmt(parseBlock(parser));
+  }
+  return parseExpressionStatement(parser);
+}
+
+// 解析 return 语句，可以带返回表达式，也可以直接返回 nil。
+fn parseReturnStatement(parser) {
+  let value = nil;
+  if !checkType(parser, "SEMICOLON") {
+    value = parseExpression(parser);
+  }
+  consumeType(parser, "SEMICOLON", "return 语句末尾需要 ';'");
+  return returnStmt(value);
+}
+
+// 解析 break 语句，运行时由 while 负责接住信号。
+fn parseBreakStatement(parser) {
+  consumeType(parser, "SEMICOLON", "break 语句末尾需要 ';'");
+  return breakStmt();
+}
+
+// 解析 if/else 条件分支语句。
+fn parseIfStatement(parser) {
+  let condition = parseExpression(parser);
+  consumeType(parser, "LEFT_BRACE", "if 条件后需要 '{'");
+  let thenBranch = blockStmt(parseBlock(parser));
+  let elseBranch = nil;
+  if matchType(parser, "ELSE") {
+    consumeType(parser, "LEFT_BRACE", "else 后需要 '{'");
+    elseBranch = blockStmt(parseBlock(parser));
+  }
+  return ifStmt(condition, thenBranch, elseBranch);
+}
+
+// 解析 while 循环语句。
+fn parseWhileStatement(parser) {
+  let condition = parseExpression(parser);
+  consumeType(parser, "LEFT_BRACE", "while 条件后需要 '{'");
+  let body = blockStmt(parseBlock(parser));
+  return whileStmt(condition, body);
+}
+
+// 解析已经消费左大括号后的语句列表。
+fn parseBlock(parser) {
+  let statements = [];
+  while !checkType(parser, "RIGHT_BRACE") and !isParserAtEnd(parser) {
+    push(statements, parseDeclaration(parser));
+  }
+  consumeType(parser, "RIGHT_BRACE", "代码块缺少 '}'");
+  return statements;
+}
+
+// 解析 print(表达式); 语句。
+fn parsePrintStatement(parser) {
+  consumeType(parser, "LEFT_PAREN", "print 后需要 '('");
+  let expression = parseExpression(parser);
+  consumeType(parser, "RIGHT_PAREN", "print 表达式后需要 ')'");
+  consumeType(parser, "SEMICOLON", "print 语句末尾需要 ';'");
+  return printStmt(expression);
+}
+
+// 解析表达式语句：expression;
+fn parseExpressionStatement(parser) {
+  let expression = parseExpression(parser);
+  consumeType(parser, "SEMICOLON", "表达式语句末尾需要 ';'");
+  return exprStmt(expression);
+}
+
+// 表达式入口，先解析赋值，再逐层处理更高优先级表达式。
+fn parseExpression(parser) {
+  return parseAssignment(parser);
+}
+
+// 解析变量赋值和索引赋值表达式。
+fn parseAssignment(parser) {
+  let expression = parseOr(parser);
+  if matchType(parser, "EQUAL") {
+    let value = parseAssignment(parser);
+    if expression["type"] == "VariableExpr" {
+      return assignExpr(expression["name"], value);
+    }
+    if expression["type"] == "IndexExpr" {
+      return indexAssignExpr(expression["target"], expression["index"], value);
+    }
+    addParserError(parser, previousToken(parser), "无效的赋值目标");
+  }
+  return expression;
+}
+
+// 解析 or 逻辑表达式，它的优先级低于 and。
+fn parseOr(parser) {
+  let expression = parseAnd(parser);
+  while checkType(parser, "OR") {
+    let operator = advanceToken(parser);
+    let right = parseAnd(parser);
+    expression = binaryExpr(expression, operator["lexeme"], right);
+  }
+  return expression;
+}
+
+// 解析 and 逻辑表达式，它的优先级低于相等比较。
+fn parseAnd(parser) {
+  let expression = parseEquality(parser);
+  while checkType(parser, "AND") {
+    let operator = advanceToken(parser);
+    let right = parseEquality(parser);
+    expression = binaryExpr(expression, operator["lexeme"], right);
+  }
+  return expression;
+}
+
+// 解析 == 和 != 表达式。
+fn parseEquality(parser) {
+  let expression = parseComparison(parser);
+  while checkType(parser, "BANG_EQUAL") or checkType(parser, "EQUAL_EQUAL") {
+    let operator = advanceToken(parser);
+    let right = parseComparison(parser);
+    expression = binaryExpr(expression, operator["lexeme"], right);
+  }
+  return expression;
+}
+
+// 解析 >、>=、<、<= 表达式。
+fn parseComparison(parser) {
+  let expression = parseTerm(parser);
+  while checkType(parser, "GREATER") or checkType(parser, "GREATER_EQUAL") or checkType(parser, "LESS") or checkType(parser, "LESS_EQUAL") {
+    let operator = advanceToken(parser);
+    let right = parseTerm(parser);
+    expression = binaryExpr(expression, operator["lexeme"], right);
+  }
+  return expression;
+}
+
+// 解析加减法表达式。
+fn parseTerm(parser) {
+  let expression = parseFactor(parser);
+  while checkType(parser, "MINUS") or checkType(parser, "PLUS") {
+    let operator = advanceToken(parser);
+    let right = parseFactor(parser);
+    expression = binaryExpr(expression, operator["lexeme"], right);
+  }
+  return expression;
+}
+
+// 解析乘除法表达式。
+fn parseFactor(parser) {
+  let expression = parseUnary(parser);
+  while checkType(parser, "SLASH") or checkType(parser, "STAR") {
+    let operator = advanceToken(parser);
+    let right = parseUnary(parser);
+    expression = binaryExpr(expression, operator["lexeme"], right);
+  }
+  return expression;
+}
+
+// 解析 await、! 和一元负号表达式。
+fn parseUnary(parser) {
+  if checkType(parser, "AWAIT") {
+    advanceToken(parser);
+    return awaitExpr(parseUnary(parser));
+  }
+  if checkType(parser, "BANG") or checkType(parser, "MINUS") {
+    let operator = advanceToken(parser);
+    let right = parseUnary(parser);
+    return unaryExpr(operator["lexeme"], right);
+  }
+  return parsePostfix(parser);
+}
+
+// 解析索引读取后缀，例如 items[0]。
+fn parsePostfix(parser) {
+  let expression = parsePrimary(parser);
+  while true {
+    if matchType(parser, "LEFT_PAREN") {
+      expression = finishCall(parser, expression);
+    } else {
+      if matchType(parser, "LEFT_BRACKET") {
+        let index = parseExpression(parser);
+        consumeType(parser, "RIGHT_BRACKET", "索引表达式缺少 ']'");
+        expression = indexExpr(expression, index);
+      } else {
+        break;
+      }
+    }
+  }
+  return expression;
+}
+
+// 解析已经消费左括号后的调用参数列表。
+fn finishCall(parser, callee) {
+  let arguments = [];
+  if !checkType(parser, "RIGHT_PAREN") {
+    while true {
+      push(arguments, parseExpression(parser));
+      if !matchType(parser, "COMMA") {
+        break;
+      }
+    }
+  }
+  consumeType(parser, "RIGHT_PAREN", "函数调用参数后需要 ')'");
+  return callExpr(callee, arguments);
+}
+
+// 解析字面量、变量、集合字面量和括号表达式。
+fn parsePrimary(parser) {
+  if matchType(parser, "FALSE") {
+    return literalExpr(false);
+  }
+  if matchType(parser, "TRUE") {
+    return literalExpr(true);
+  }
+  if matchType(parser, "NIL") {
+    return literalExpr(nil);
+  }
+  if matchType(parser, "NUMBER") {
+    return literalExpr(previousToken(parser)["literal"]);
+  }
+  if matchType(parser, "STRING") {
+    return literalExpr(previousToken(parser)["literal"]);
+  }
+  if matchType(parser, "IDENTIFIER") {
+    return variableExpr(previousToken(parser)["lexeme"]);
+  }
+  if matchType(parser, "FUTURE") {
+    consumeType(parser, "LEFT_BRACE", "future 后需要 '{'");
+    return futureExpr(parseBlock(parser));
+  }
+  if matchType(parser, "LEFT_BRACKET") {
+    return parseListLiteral(parser);
+  }
+  if matchType(parser, "LEFT_BRACE") {
+    return parseMapLiteral(parser);
+  }
+  if matchType(parser, "LEFT_PAREN") {
+    let expression = parseExpression(parser);
+    consumeType(parser, "RIGHT_PAREN", "括号表达式缺少 ')'");
+    return groupingExpr(expression);
+  }
+
+  let token = peekToken(parser);
+  addParserError(parser, token, "需要表达式");
+  if !isParserAtEnd(parser) {
+    advanceToken(parser);
+  }
+  return literalExpr(nil);
+}
+
+// 解析 List 字面量中的元素列表。
+fn parseListLiteral(parser) {
+  let elements = [];
+  if !checkType(parser, "RIGHT_BRACKET") {
+    while true {
+      push(elements, parseExpression(parser));
+      if !matchType(parser, "COMMA") {
+        break;
+      }
+    }
+  }
+  consumeType(parser, "RIGHT_BRACKET", "列表字面量缺少 ']'");
+  return listExpr(elements);
+}
+
+// 解析 Map 字面量中的 key/value 项。
+fn parseMapLiteral(parser) {
+  let entries = [];
+  if !checkType(parser, "RIGHT_BRACE") {
+    while true {
+      let key = parseExpression(parser);
+      consumeType(parser, "COLON", "Map key 后需要 ':'");
+      let value = parseExpression(parser);
+      push(entries, mapEntry(key, value));
+      if !matchType(parser, "COMMA") {
+        break;
+      }
+    }
+  }
+  consumeType(parser, "RIGHT_BRACE", "Map 字面量缺少 '}'");
+  return mapExpr(entries);
+}
