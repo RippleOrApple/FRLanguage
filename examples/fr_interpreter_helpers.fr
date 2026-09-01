@@ -21,17 +21,28 @@ fn executeProgram(state, program) {
   let statements = program["statements"];
   let index = 0;
   while index < len(statements) {
-    executeStatement(state, statements[index]);
+    let signal = executeStatement(state, statements[index]);
+    if signal != nil {
+      return signal;
+    }
     index = index + 1;
   }
+  return nil;
 }
 
 // 根据语句类型分派到对应执行逻辑。
 fn executeStatement(state, statement) {
   let statementType = statement["type"];
+  if statementType == "FunctionStmt" {
+    executeSelfFunctionStmt(state, statement);
+    return nil;
+  }
   if statementType == "VarStmt" {
     executeVarStmt(state, statement);
     return nil;
+  }
+  if statementType == "ReturnStmt" {
+    return executeSelfReturnStmt(state, statement);
   }
   if statementType == "PrintStmt" {
     executePrintStmt(state, statement);
@@ -42,18 +53,34 @@ fn executeStatement(state, statement) {
     return nil;
   }
   if statementType == "BlockStmt" {
-    executeSelfBlock(state, statement);
-    return nil;
+    return executeSelfBlock(state, statement);
   }
   if statementType == "IfStmt" {
-    executeSelfIfStmt(state, statement);
-    return nil;
+    return executeSelfIfStmt(state, statement);
   }
   if statementType == "WhileStmt" {
-    executeSelfWhileStmt(state, statement);
-    return nil;
+    return executeSelfWhileStmt(state, statement);
   }
   return nil;
+}
+
+// 执行函数声明，把函数对象保存到当前环境中。
+fn executeSelfFunctionStmt(state, statement) {
+  state["env"][statement["name"]] = {
+    "type": "SelfFunction",
+    "name": statement["name"],
+    "params": statement["params"],
+    "body": statement["body"]
+  };
+}
+
+// 执行 return 语句，用信号 Map 把返回值传给调用方。
+fn executeSelfReturnStmt(state, statement) {
+  let value = nil;
+  if statement["value"] != nil {
+    value = evaluateSelfExpr(state, statement["value"]);
+  }
+  return {"type": "ReturnSignal", "value": value};
 }
 
 // 执行变量声明，把 initializer 的值保存到环境中。
@@ -72,19 +99,22 @@ fn executeSelfBlock(state, statement) {
   let statements = statement["statements"];
   let index = 0;
   while index < len(statements) {
-    executeStatement(state, statements[index]);
+    let signal = executeStatement(state, statements[index]);
+    if signal != nil {
+      return signal;
+    }
     index = index + 1;
   }
+  return nil;
 }
 
 // 执行 if 语句，根据条件真假选择分支。
 fn executeSelfIfStmt(state, statement) {
   if isSelfTruthy(evaluateSelfExpr(state, statement["condition"])) {
-    executeStatement(state, statement["then_branch"]);
-    return nil;
+    return executeStatement(state, statement["then_branch"]);
   }
   if statement["else_branch"] != nil {
-    executeStatement(state, statement["else_branch"]);
+    return executeStatement(state, statement["else_branch"]);
   }
   return nil;
 }
@@ -92,8 +122,12 @@ fn executeSelfIfStmt(state, statement) {
 // 执行 while 语句，条件为真时重复执行循环体。
 fn executeSelfWhileStmt(state, statement) {
   while isSelfTruthy(evaluateSelfExpr(state, statement["condition"])) {
-    executeStatement(state, statement["body"]);
+    let signal = executeStatement(state, statement["body"]);
+    if signal != nil {
+      return signal;
+    }
   }
+  return nil;
 }
 
 // 计算自举 AST 表达式，并返回运行时值。
@@ -119,6 +153,9 @@ fn evaluateSelfExpr(state, expression) {
   }
   if expressionType == "IndexAssignExpr" {
     return evaluateSelfIndexAssignExpr(state, expression);
+  }
+  if expressionType == "CallExpr" {
+    return evaluateSelfCallExpr(state, expression);
   }
   if expressionType == "GroupingExpr" {
     return evaluateSelfExpr(state, expression["expression"]);
@@ -179,6 +216,54 @@ fn evaluateSelfIndexAssignExpr(state, expression) {
   let value = evaluateSelfExpr(state, expression["value"]);
   target[index] = value;
   return value;
+}
+
+// 计算函数调用表达式，先求出被调用者和参数值。
+fn evaluateSelfCallExpr(state, expression) {
+  let callee = evaluateSelfExpr(state, expression["callee"]);
+  let arguments = [];
+  let argumentExprs = expression["arguments"];
+  let index = 0;
+  while index < len(argumentExprs) {
+    push(arguments, evaluateSelfExpr(state, argumentExprs[index]));
+    index = index + 1;
+  }
+  return callSelfFunction(state, callee, arguments);
+}
+
+// 调用自举函数对象，使用参数局部环境执行函数体。
+fn callSelfFunction(state, functionValue, arguments) {
+  let previousEnv = state["env"];
+  let localEnv = {};
+  let params = functionValue["params"];
+  localEnv[functionValue["name"]] = functionValue;
+  let index = 0;
+  while index < len(params) {
+    localEnv[params[index]] = arguments[index];
+    index = index + 1;
+  }
+
+  state["env"] = localEnv;
+  let signal = executeSelfFunctionBody(state, functionValue["body"]);
+  state["env"] = previousEnv;
+
+  if signal != nil {
+    return signal["value"];
+  }
+  return nil;
+}
+
+// 执行函数体语句列表，遇到 return 信号立即停止。
+fn executeSelfFunctionBody(state, statements) {
+  let index = 0;
+  while index < len(statements) {
+    let signal = executeStatement(state, statements[index]);
+    if signal != nil {
+      return signal;
+    }
+    index = index + 1;
+  }
+  return nil;
 }
 
 // 计算一元表达式，目前支持 ! 和一元负号。

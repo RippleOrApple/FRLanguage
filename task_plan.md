@@ -33,7 +33,7 @@
 - [ ] 阶段 24：逐步扩展 FR Parser/Interpreter，覆盖 `if`、`while`、函数和 Future。
   - [x] 阶段 24.1：扩展 FR Parser/Interpreter 子集，支持 List/Map 字面量、索引读取、变量赋值和索引赋值。
   - [x] 阶段 24.2：扩展 FR Parser/Interpreter 子集，支持 `if`、`while` 和 block。
-  - [ ] 阶段 24.3：扩展 FR Parser/Interpreter 子集，支持函数声明、函数调用和 `return`。
+  - [x] 阶段 24.3：扩展 FR Parser/Interpreter 子集，支持函数声明、函数调用、递归和 `return`。
   - [ ] 阶段 24.4：评估 Future 是否进入自举子集，避免过早复杂化。
 
 ## 决策

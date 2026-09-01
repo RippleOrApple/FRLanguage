@@ -103,3 +103,15 @@
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出 `[7, false]`、`[2, [1, 42, 3], FR, 42]` 和 `[14]`。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 开始阶段 24.3：新增 `examples/fr_parser_function_sample.fr.txt`，覆盖函数声明、参数、局部变量、函数调用、`return`、条件返回和递归。
+- 新增 FR Parser 函数对照测试和自解释器函数端到端测试，先观察到 FR Parser 还无法把 `fn/return/call` 解析成对应 AST。
+- 扩展 `examples/fr_parser_helpers.fr`，新增 `FunctionStmt`、`ReturnStmt` 和 `CallExpr` AST Map，以及函数声明、return 语句和调用参数解析。
+- 扩展 `examples/fr_interpreter_helpers.fr`，新增自举函数对象、调用局部环境、return 信号传递和函数体执行。
+- 递归样例先暴露出局部环境无法读取自身函数名的问题；随后给 `SelfFunction` 记录 `name`，并在调用时把函数自身绑定到局部环境。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_function_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_function_program`：2 个函数自举测试通过。
+- 扩展 `examples/fr_self_host_demo.fr`，现在会同时运行基础、集合、控制流和函数四个自举样例。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：95 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出 `[7, false]`、`[2, [1, 42, 3], FR, 42]`、`[14]` 和 `[7, yes, no, 120]`。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。

@@ -152,6 +152,21 @@ fn whileStmt(condition, body) {
   return {"type": "WhileStmt", "condition": condition, "body": body};
 }
 
+// 创建函数声明语句 AST Map。
+fn functionStmt(name, params, body) {
+  return {"type": "FunctionStmt", "name": name, "params": params, "body": body};
+}
+
+// 创建 return 语句 AST Map。
+fn returnStmt(value) {
+  return {"type": "ReturnStmt", "value": value};
+}
+
+// 创建函数调用表达式 AST Map。
+fn callExpr(callee, arguments) {
+  return {"type": "CallExpr", "callee": callee, "arguments": arguments};
+}
+
 // 把源码字符串先交给 FR Lexer，再解析成 Program AST Map。
 fn parseSource(source) {
   return parseTokens(scan(source));
@@ -167,12 +182,36 @@ fn parseTokens(tokens) {
   return {"type": "Program", "statements": statements, "errors": parser["errors"]};
 }
 
-// 解析声明级语法，目前只支持 let，其他交给普通语句。
+// 解析声明级语法，支持函数声明和变量声明。
 fn parseDeclaration(parser) {
+  if matchType(parser, "FN") {
+    return parseFunctionDeclaration(parser);
+  }
   if matchType(parser, "LET") {
     return parseVarDeclaration(parser);
   }
   return parseStatement(parser);
+}
+
+// 解析函数声明：fn name(param, ...) { ... }
+fn parseFunctionDeclaration(parser) {
+  let name = consumeType(parser, "IDENTIFIER", "函数声明需要函数名");
+  consumeType(parser, "LEFT_PAREN", "函数名后需要 '('");
+
+  let params = [];
+  if !checkType(parser, "RIGHT_PAREN") {
+    while true {
+      let param = consumeType(parser, "IDENTIFIER", "函数参数需要参数名");
+      push(params, param["lexeme"]);
+      if !matchType(parser, "COMMA") {
+        break;
+      }
+    }
+  }
+
+  consumeType(parser, "RIGHT_PAREN", "函数参数后需要 ')'");
+  consumeType(parser, "LEFT_BRACE", "函数体前需要 '{'");
+  return functionStmt(name["lexeme"], params, parseBlock(parser));
 }
 
 // 解析变量声明：let name = expression;
@@ -186,10 +225,13 @@ fn parseVarDeclaration(parser) {
   return varStmt(name["lexeme"], initializer);
 }
 
-// 解析普通语句，支持 print、if、while、block 和表达式语句。
+// 解析普通语句，支持 print、return、if、while、block 和表达式语句。
 fn parseStatement(parser) {
   if matchType(parser, "PRINT") {
     return parsePrintStatement(parser);
+  }
+  if matchType(parser, "RETURN") {
+    return parseReturnStatement(parser);
   }
   if matchType(parser, "IF") {
     return parseIfStatement(parser);
@@ -201,6 +243,16 @@ fn parseStatement(parser) {
     return blockStmt(parseBlock(parser));
   }
   return parseExpressionStatement(parser);
+}
+
+// 解析 return 语句，可以带返回表达式，也可以直接返回 nil。
+fn parseReturnStatement(parser) {
+  let value = nil;
+  if !checkType(parser, "SEMICOLON") {
+    value = parseExpression(parser);
+  }
+  consumeType(parser, "SEMICOLON", "return 语句末尾需要 ';'");
+  return returnStmt(value);
 }
 
 // 解析 if/else 条件分支语句。
@@ -328,12 +380,35 @@ fn parseUnary(parser) {
 // 解析索引读取后缀，例如 items[0]。
 fn parsePostfix(parser) {
   let expression = parsePrimary(parser);
-  while matchType(parser, "LEFT_BRACKET") {
-    let index = parseExpression(parser);
-    consumeType(parser, "RIGHT_BRACKET", "索引表达式缺少 ']'");
-    expression = indexExpr(expression, index);
+  while true {
+    if matchType(parser, "LEFT_PAREN") {
+      expression = finishCall(parser, expression);
+    } else {
+      if matchType(parser, "LEFT_BRACKET") {
+        let index = parseExpression(parser);
+        consumeType(parser, "RIGHT_BRACKET", "索引表达式缺少 ']'");
+        expression = indexExpr(expression, index);
+      } else {
+        break;
+      }
+    }
   }
   return expression;
+}
+
+// 解析已经消费左括号后的调用参数列表。
+fn finishCall(parser, callee) {
+  let arguments = [];
+  if !checkType(parser, "RIGHT_PAREN") {
+    while true {
+      push(arguments, parseExpression(parser));
+      if !matchType(parser, "COMMA") {
+        break;
+      }
+    }
+  }
+  consumeType(parser, "RIGHT_PAREN", "函数调用参数后需要 ')'");
+  return callExpr(callee, arguments);
 }
 
 // 解析字面量、变量、集合字面量和括号表达式。

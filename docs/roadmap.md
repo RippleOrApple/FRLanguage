@@ -320,7 +320,7 @@ fr_lexer.fr
 
 - FR 能实现自己工具链中的一小块。
 - 项目进入自举准备阶段。
-- 第一条最小自举闭环可以运行变量、基础表达式、`print`、List/Map 字面量、索引读写、`if` 和 `while`。
+- 第一条最小自举闭环可以运行变量、基础表达式、`print`、List/Map 字面量、索引读写、`if`、`while`、函数、递归和 `return`。
 
 完成标准：
 
@@ -328,7 +328,7 @@ fr_lexer.fr
 - Python Lexer 和 FR Lexer 在测试样例上结果一致。
 - FR Parser 子集能输出结构化 AST Map，并和 Python Parser 子集对齐。
 - FR 解释器子集能运行小型 FR 程序，输出和 Python 实现一致。
-- FR Parser/Interpreter 子集应逐步扩展，当前已覆盖集合字面量、索引读写和控制流，下一步重点是函数。
+- FR Parser/Interpreter 子集应逐步扩展，当前已覆盖集合字面量、索引读写、控制流和函数，下一步重点是评估 Future 是否进入自举子集。
 - 对照测试应逐步覆盖基础源码、关键字、集合字面量、运算符和错误场景。
 - 在 FR 没有异常机制前，词法错误可以先用 `ERROR` Token 表达。
 

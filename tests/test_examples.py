@@ -8,8 +8,10 @@ from frlang.ast import (
     AssignExpr,
     BinaryExpr,
     BlockStmt,
+    CallExpr,
     Expr,
     ExprStmt,
+    FunctionStmt,
     GroupingExpr,
     IfStmt,
     IndexAssignExpr,
@@ -19,6 +21,7 @@ from frlang.ast import (
     MapExpr,
     PrintStmt,
     Program,
+    ReturnStmt,
     Stmt,
     UnaryExpr,
     VarStmt,
@@ -148,6 +151,21 @@ class ExampleTest(unittest.TestCase):
                 "condition": self.normalize_python_expr(statement.condition),
                 "body": self.normalize_python_stmt(statement.body),
             }
+        if isinstance(statement, FunctionStmt):
+            return {
+                "type": "FunctionStmt",
+                "name": statement.name.lexeme,
+                "params": [param.lexeme for param in statement.params],
+                "body": [
+                    self.normalize_python_stmt(child)
+                    for child in statement.body
+                ],
+            }
+        if isinstance(statement, ReturnStmt):
+            value = None
+            if statement.value is not None:
+                value = self.normalize_python_expr(statement.value)
+            return {"type": "ReturnStmt", "value": value}
         if isinstance(statement, ExprStmt):
             return {
                 "type": "ExprStmt",
@@ -216,6 +234,15 @@ class ExampleTest(unittest.TestCase):
                 "left": self.normalize_python_expr(expression.left),
                 "operator": expression.operator.lexeme,
                 "right": self.normalize_python_expr(expression.right),
+            }
+        if isinstance(expression, CallExpr):
+            return {
+                "type": "CallExpr",
+                "callee": self.normalize_python_expr(expression.callee),
+                "arguments": [
+                    self.normalize_python_expr(argument)
+                    for argument in expression.arguments
+                ],
             }
         self.fail(f"Python AST 表达式类型暂未纳入 FR Parser 对照：{type(expression)}")
 
@@ -505,6 +532,24 @@ class ExampleTest(unittest.TestCase):
     def test_fr_self_interpreter_runs_control_flow_program(self) -> None:
         """验证 FR 写的解释器子集能运行 if 和 while 程序。"""
         source_path = "fr_parser_control_flow_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_self_interpreter(source_path),
+            self.python_program_output(source_path),
+        )
+
+    def test_fr_parser_matches_python_parser_for_function_program(self) -> None:
+        """验证 FR Parser 子集能解析函数声明、调用和 return AST。"""
+        source_path = "fr_parser_function_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_parser(source_path),
+            self.python_parser_ast(source_path),
+        )
+
+    def test_fr_self_interpreter_runs_function_program(self) -> None:
+        """验证 FR 写的解释器子集能运行函数调用程序。"""
+        source_path = "fr_parser_function_sample.fr.txt"
 
         self.assertEqual(
             self.run_fr_self_interpreter(source_path),
