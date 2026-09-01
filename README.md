@@ -28,7 +28,7 @@ FR 写的工具链核心组件已经整理到 `examples/toolchain/`：
 - `examples/toolchain/interpreter.fr`
 - `examples/toolchain/bootstrap.fr`
 
-当前还新增了一个更强的自举验证探针：Python 解释器先运行 FR 写的自解释器，再由目标 FR 程序导入 `toolchain/bootstrap.fr`，最后让内层 FR 工具链跑默认 15 个验收用例。
+当前还新增了一个更强的自举验证探针：Python 解释器先运行 FR 写的自解释器，再由目标 FR 程序导入 `toolchain/bootstrap.fr`，最后让内层 FR 工具链跑默认 17 个验收用例。
 
 ## 当前支持的语法
 
@@ -115,8 +115,8 @@ print(missing);
 - 没有类和对象系统
 - Runtime 是协作式任务队列，不是真正多线程或 IO 异步
 - `await` 当前通过 Runtime 队列运行 Future 任务，还没有完整的暂停和恢复调用栈模型
-- 自举工具链目前只覆盖子集：FR Parser/Interpreter 子集可运行变量、基础表达式、`print`、目标程序 `import`、List/Map 字面量、索引读写、`and/or` 短路逻辑、`if`、`while`、`break`、block 局部作用域、函数调用、常用内置函数桥接、闭包读取、跨函数全局调用、递归、`return`、最小 `future/await`、基础运行时错误诊断和非法控制流诊断
-- 二层自举验收已经能通过默认 15 例，但仍依赖 Python 宿主解释器承载最外层执行和文件 IO
+- 自举工具链目前只覆盖子集：FR Parser/Interpreter 子集可运行变量、基础表达式、`print`、目标程序 `import`、List/Map 字面量、索引读写、`and/or` 短路逻辑、`if`、`while`、`break`、block 局部作用域、函数调用、常用内置函数桥接、闭包读取、跨函数全局调用、递归、`return`、最小 `future/await`、基础运行时错误诊断、运行时错误停止和非法控制流诊断
+- 二层自举验收已经能通过默认 17 例，但仍依赖 Python 宿主解释器承载最外层执行和文件 IO
 
 ## 后续方向
 

@@ -132,8 +132,18 @@ fn defaultBootstrapExpectations() {
     },
     {
       "path": "fr_parser_error_sample.fr.txt",
-      "output": ["nil", "nil", "nil"],
-      "errors": ["变量 missing 未定义", "只能调用函数", "await 只能用于 Future"]
+      "output": [],
+      "errors": ["变量 missing 未定义"]
+    },
+    {
+      "path": "fr_parser_call_error_sample.fr.txt",
+      "output": [],
+      "errors": ["只能调用函数"]
+    },
+    {
+      "path": "fr_parser_await_error_sample.fr.txt",
+      "output": [],
+      "errors": ["await 只能用于 Future"]
     },
     {
       "path": "fr_parser_top_level_return_error_sample.fr.txt",
@@ -152,7 +162,7 @@ fn defaultBootstrapExpectations() {
     },
     {
       "path": "fr_parser_future_break_error_sample.fr.txt",
-      "output": ["nil"],
+      "output": [],
       "errors": ["break 只能用于 while 循环"]
     }
   ];

@@ -787,17 +787,17 @@ class ExampleTest(unittest.TestCase):
         result = self.run_fr_bootstrap_acceptance()
 
         self.assertTrue(result["passed"])
-        self.assertEqual(result["case_count"], 15)
-        self.assertEqual(result["passed_count"], 15)
+        self.assertEqual(result["case_count"], 17)
+        self.assertEqual(result["passed_count"], 17)
         self.assertEqual(result["failed_count"], 0)
-        self.assertEqual(len(result["cases"]), 15)
+        self.assertEqual(len(result["cases"]), 17)
         self.assertTrue(all(case["passed"] for case in result["cases"]))
         self.assertEqual(
             result["cases"][10]["errors"],
-            ["变量 missing 未定义", "只能调用函数", "await 只能用于 Future"],
+            ["变量 missing 未定义"],
         )
         self.assertEqual(
-            result["cases"][14]["errors"],
+            result["cases"][16]["errors"],
             ["break 只能用于 while 循环"],
         )
 
@@ -806,9 +806,11 @@ class ExampleTest(unittest.TestCase):
         output = self.run_example("examples/fr_bootstrap_acceptance.fr")
 
         self.assertIn('"passed": true', output)
-        self.assertIn('"case_count": 15', output)
+        self.assertIn('"case_count": 17', output)
         self.assertIn('"failed_count": 0', output)
         self.assertIn('"path": "fr_parser_error_sample.fr.txt"', output)
+        self.assertIn('"path": "fr_parser_call_error_sample.fr.txt"', output)
+        self.assertIn('"path": "fr_parser_await_error_sample.fr.txt"', output)
         self.assertIn("变量 missing 未定义", output)
         self.assertIn("只能调用函数", output)
         self.assertIn("await 只能用于 Future", output)
@@ -826,7 +828,7 @@ class ExampleTest(unittest.TestCase):
             "fr_nested_bootstrap_acceptance.fr.txt"
         )
 
-        self.assertEqual(result["output"], ["true", "15", "0"])
+        self.assertEqual(result["output"], ["true", "17", "0"])
         self.assertEqual(result["errors"], [])
 
     def test_fr_toolchain_self_load_probe_example_runs(self) -> None:
@@ -845,18 +847,33 @@ class ExampleTest(unittest.TestCase):
             self.python_program_output(source_path),
         )
 
-    def test_fr_self_interpreter_reports_basic_runtime_errors(self) -> None:
-        """验证 FR 写的解释器子集能记录基础运行时错误。"""
+    def test_fr_self_interpreter_stops_after_first_runtime_error(self) -> None:
+        """验证 FR 自解释器遇到运行时错误后会停止后续语句。"""
         result = self.run_fr_self_interpreter_result("fr_parser_error_sample.fr.txt")
         messages = [error["message"] for error in result["errors"]]
 
+        self.assertEqual(result["output"], [])
+        self.assertEqual(messages, ["变量 missing 未定义"])
+
+    def test_fr_self_interpreter_reports_invalid_call_error(self) -> None:
+        """验证 FR 自解释器能记录非法函数调用错误。"""
+        result = self.run_fr_self_interpreter_result(
+            "fr_parser_call_error_sample.fr.txt"
+        )
+
+        self.assertEqual(result["output"], [])
+        self.assertEqual([error["message"] for error in result["errors"]], ["只能调用函数"])
+
+    def test_fr_self_interpreter_reports_invalid_await_error(self) -> None:
+        """验证 FR 自解释器能记录非法 await 错误。"""
+        result = self.run_fr_self_interpreter_result(
+            "fr_parser_await_error_sample.fr.txt"
+        )
+
+        self.assertEqual(result["output"], [])
         self.assertEqual(
-            messages,
-            [
-                "变量 missing 未定义",
-                "只能调用函数",
-                "await 只能用于 Future",
-            ],
+            [error["message"] for error in result["errors"]],
+            ["await 只能用于 Future"],
         )
 
     def test_fr_self_interpreter_reports_invalid_top_level_return(self) -> None:

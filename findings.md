@@ -54,10 +54,11 @@
 - FR Parser 子集支持 `ImportStmt` 后，目标程序就能拆成多个文件；这比只在宿主测试脚本中 import 工具链更接近真实自举项目形态。
 - 自举解释器的 import 缓存使用路径字符串即可覆盖当前 examples 下的重复导入样例；嵌套目录相对路径解析仍受限于宿主 `readFile` 的 base_path 模型。
 - `examples/toolchain/bootstrap.fr` 让“运行一组目标源码并返回结构化结果”这件事也由 FR 代码表达，后续可以逐步减少 Python 测试脚手架承担的自举编排工作。
-- `runDefaultBootstrapExpectations()` 把 expected 输出和 expected 错误放进 FR 工具链本身，当前默认 15 个用例能覆盖主要正常路径和基础错误路径。
+- `runDefaultBootstrapExpectations()` 把 expected 输出和 expected 错误放进 FR 工具链本身，当前默认 17 个用例能覆盖主要正常路径、错误停止和基础错误路径。
 - `runSelfHostedFileResult(path)` 比 `runSelfHostedSourceResult(readFile(path))` 更适合自举目标程序，因为它能保留目标文件目录，让目标内部 `import "lexer.fr";` 这类同级导入正确解析。
-- FR 自解释器现在可以加载 `toolchain/bootstrap.fr`，也可以执行一个目标 FR 程序，由该目标程序导入 FR bootstrap 并跑默认 15 个验收用例。
+- FR 自解释器现在可以加载 `toolchain/bootstrap.fr`，也可以执行一个目标 FR 程序，由该目标程序导入 FR bootstrap 并跑默认 17 个验收用例。
 - 二层自举会显著加深 Python 宿主调用栈；当前通过 `Interpreter.ensure_recursion_capacity()` 提高递归上限，后续若继续加深自举层级，应考虑字节码 VM 或显式执行栈。
+- 自解释器遇到运行时错误后现在通过 `ErrorSignal` 停止后续语句；非法调用和非法 await 需要拆成独立样例，避免被第一个缺失变量错误短路掉。
 
 ## 路线判断
 

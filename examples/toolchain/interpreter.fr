@@ -68,6 +68,24 @@ fn addSelfRuntimeError(state, message) {
   push(state["errors"], {"message": message});
 }
 
+// 读取当前错误数量，用来判断某段执行是否新增了错误。
+fn selfErrorCount(state) {
+  return len(state["errors"]);
+}
+
+// 创建错误停止信号，通知上层语句边界停止继续执行。
+fn selfErrorSignal() {
+  return {"type": "ErrorSignal"};
+}
+
+// 如果执行过程中新增了错误，就返回错误停止信号。
+fn signalForNewSelfError(state, beforeCount) {
+  if selfErrorCount(state) > beforeCount {
+    return selfErrorSignal();
+  }
+  return nil;
+}
+
 // 沿着环境链给已有变量赋值；找不到时先写入当前环境。
 fn assignSelfVariable(state, name, value) {
   let env = findSelfEnv(state["env"], name);
@@ -157,6 +175,9 @@ fn executeProgram(state, program) {
 
 // 把跑出合法边界的控制流信号转换成运行时错误诊断。
 fn reportUnhandledSelfSignal(state, signal) {
+  if signal["type"] == "ErrorSignal" {
+    return nil;
+  }
   if signal["type"] == "ReturnSignal" {
     addSelfRuntimeError(state, "return 只能用于函数");
     return nil;
@@ -176,12 +197,10 @@ fn executeStatement(state, statement) {
     return nil;
   }
   if statementType == "ImportStmt" {
-    executeSelfImportStmt(state, statement);
-    return nil;
+    return executeSelfImportStmt(state, statement);
   }
   if statementType == "VarStmt" {
-    executeVarStmt(state, statement);
-    return nil;
+    return executeVarStmt(state, statement);
   }
   if statementType == "ReturnStmt" {
     return executeSelfReturnStmt(state, statement);
@@ -190,12 +209,12 @@ fn executeStatement(state, statement) {
     return executeSelfBreakStmt(state, statement);
   }
   if statementType == "PrintStmt" {
-    executePrintStmt(state, statement);
-    return nil;
+    return executePrintStmt(state, statement);
   }
   if statementType == "ExprStmt" {
+    let beforeCount = selfErrorCount(state);
     evaluateSelfExpr(state, statement["expression"]);
-    return nil;
+    return signalForNewSelfError(state, beforeCount);
   }
   if statementType == "BlockStmt" {
     return executeSelfBlock(state, statement);
@@ -229,8 +248,13 @@ fn executeSelfImportStmt(state, statement) {
   state["imports"][path] = true;
 
   let previousDir = state["current_dir"];
+  let beforeCount = selfErrorCount(state);
   let program = parseSource(readFile(path));
   appendSelfErrors(state, program["errors"]);
+  if selfErrorCount(state) > beforeCount {
+    state["current_dir"] = previousDir;
+    return selfErrorSignal();
+  }
   state["current_dir"] = selfDirName(path);
   let signal = executeProgram(state, program);
   state["current_dir"] = previousDir;
@@ -250,7 +274,11 @@ fn appendSelfErrors(state, errors) {
 fn executeSelfReturnStmt(state, statement) {
   let value = nil;
   if statement["value"] != nil {
+    let beforeCount = selfErrorCount(state);
     value = evaluateSelfExpr(state, statement["value"]);
+    if selfErrorCount(state) > beforeCount {
+      return selfErrorSignal();
+    }
   }
   return {"type": "ReturnSignal", "value": value};
 }
@@ -264,15 +292,25 @@ fn executeSelfBreakStmt(state, statement) {
 fn executeVarStmt(state, statement) {
   let value = nil;
   if statement["initializer"] != nil {
+    let beforeCount = selfErrorCount(state);
     value = evaluateSelfExpr(state, statement["initializer"]);
+    if selfErrorCount(state) > beforeCount {
+      return selfErrorSignal();
+    }
   }
   defineSelfVariable(state, statement["name"], value);
+  return nil;
 }
 
 // 执行 print 语句，把字符串化后的值追加到输出列表。
 fn executePrintStmt(state, statement) {
+  let beforeCount = selfErrorCount(state);
   let value = evaluateSelfExpr(state, statement["expression"]);
+  if selfErrorCount(state) > beforeCount {
+    return selfErrorSignal();
+  }
   push(state["output"], stringifySelfValue(value));
+  return nil;
 }
 
 // 在新的局部环境中执行 block，结束后恢复外层环境。
@@ -295,7 +333,12 @@ fn executeSelfBlock(state, statement) {
 
 // 执行 if 语句，根据条件真假选择分支。
 fn executeSelfIfStmt(state, statement) {
-  if isSelfTruthy(evaluateSelfExpr(state, statement["condition"])) {
+  let beforeCount = selfErrorCount(state);
+  let condition = evaluateSelfExpr(state, statement["condition"]);
+  if selfErrorCount(state) > beforeCount {
+    return selfErrorSignal();
+  }
+  if isSelfTruthy(condition) {
     return executeStatement(state, statement["then_branch"]);
   }
   if statement["else_branch"] != nil {
@@ -306,7 +349,15 @@ fn executeSelfIfStmt(state, statement) {
 
 // 执行 while 语句，条件为真时重复执行循环体。
 fn executeSelfWhileStmt(state, statement) {
-  while isSelfTruthy(evaluateSelfExpr(state, statement["condition"])) {
+  while true {
+    let beforeCount = selfErrorCount(state);
+    let condition = evaluateSelfExpr(state, statement["condition"]);
+    if selfErrorCount(state) > beforeCount {
+      return selfErrorSignal();
+    }
+    if !isSelfTruthy(condition) {
+      break;
+    }
     let signal = executeStatement(state, statement["body"]);
     if signal != nil {
       if signal["type"] == "BreakSignal" {
@@ -365,7 +416,11 @@ fn evaluateSelfExpr(state, expression) {
 
 // 计算变量赋值表达式，并把新值写回环境。
 fn evaluateSelfAssignExpr(state, expression) {
+  let beforeCount = selfErrorCount(state);
   let value = evaluateSelfExpr(state, expression["value"]);
+  if selfErrorCount(state) > beforeCount {
+    return nil;
+  }
   return assignSelfVariable(state, expression["name"], value);
 }
 
@@ -375,7 +430,11 @@ fn evaluateSelfListExpr(state, expression) {
   let elements = expression["elements"];
   let index = 0;
   while index < len(elements) {
+    let beforeCount = selfErrorCount(state);
     push(values, evaluateSelfExpr(state, elements[index]));
+    if selfErrorCount(state) > beforeCount {
+      return nil;
+    }
     index = index + 1;
   }
   return values;
@@ -388,8 +447,15 @@ fn evaluateSelfMapExpr(state, expression) {
   let index = 0;
   while index < len(entries) {
     let entry = entries[index];
+    let beforeCount = selfErrorCount(state);
     let key = evaluateSelfExpr(state, entry["key"]);
+    if selfErrorCount(state) > beforeCount {
+      return nil;
+    }
     values[key] = evaluateSelfExpr(state, entry["value"]);
+    if selfErrorCount(state) > beforeCount {
+      return nil;
+    }
     index = index + 1;
   }
   return values;
@@ -397,28 +463,53 @@ fn evaluateSelfMapExpr(state, expression) {
 
 // 计算索引读取表达式，支持 List 和 Map 的宿主运行时行为。
 fn evaluateSelfIndexExpr(state, expression) {
+  let beforeCount = selfErrorCount(state);
   let target = evaluateSelfExpr(state, expression["target"]);
+  if selfErrorCount(state) > beforeCount {
+    return nil;
+  }
   let index = evaluateSelfExpr(state, expression["index"]);
+  if selfErrorCount(state) > beforeCount {
+    return nil;
+  }
   return target[index];
 }
 
 // 计算索引赋值表达式，并返回写入的新值。
 fn evaluateSelfIndexAssignExpr(state, expression) {
+  let beforeCount = selfErrorCount(state);
   let target = evaluateSelfExpr(state, expression["target"]);
+  if selfErrorCount(state) > beforeCount {
+    return nil;
+  }
   let index = evaluateSelfExpr(state, expression["index"]);
+  if selfErrorCount(state) > beforeCount {
+    return nil;
+  }
   let value = evaluateSelfExpr(state, expression["value"]);
+  if selfErrorCount(state) > beforeCount {
+    return nil;
+  }
   target[index] = value;
   return value;
 }
 
 // 计算函数调用表达式，先求出被调用者和参数值。
 fn evaluateSelfCallExpr(state, expression) {
+  let beforeCount = selfErrorCount(state);
   let callee = evaluateSelfExpr(state, expression["callee"]);
+  if selfErrorCount(state) > beforeCount {
+    return nil;
+  }
   let arguments = [];
   let argumentExprs = expression["arguments"];
   let index = 0;
   while index < len(argumentExprs) {
+    beforeCount = selfErrorCount(state);
     push(arguments, evaluateSelfExpr(state, argumentExprs[index]));
+    if selfErrorCount(state) > beforeCount {
+      return nil;
+    }
     index = index + 1;
   }
   return callSelfCallable(state, callee, arguments);
@@ -437,7 +528,11 @@ fn evaluateSelfFutureExpr(state, expression) {
 
 // await 自举 Future；pending 时执行一次，之后复用已保存结果。
 fn evaluateSelfAwaitExpr(state, expression) {
+  let beforeCount = selfErrorCount(state);
   let futureValue = evaluateSelfExpr(state, expression["expression"]);
+  if selfErrorCount(state) > beforeCount {
+    return nil;
+  }
   if type(futureValue) != "map" {
     addSelfRuntimeError(state, "await 只能用于 Future");
     return nil;
@@ -447,7 +542,11 @@ fn evaluateSelfAwaitExpr(state, expression) {
     return nil;
   }
   if futureValue["state"] == "pending" {
+    beforeCount = selfErrorCount(state);
     runSelfFuture(state, futureValue);
+    if selfErrorCount(state) > beforeCount {
+      return nil;
+    }
   }
   return futureValue["value"];
 }
@@ -460,6 +559,10 @@ fn runSelfFuture(state, futureValue) {
   state["env"] = previousEnv;
 
   futureValue["state"] = "resolved";
+  if signal != nil and signal["type"] == "ErrorSignal" {
+    futureValue["value"] = nil;
+    return nil;
+  }
   if signal != nil and signal["type"] == "ReturnSignal" {
     futureValue["value"] = signal["value"];
     return nil;
@@ -554,6 +657,9 @@ fn callSelfFunction(state, functionValue, arguments) {
   state["env"] = previousEnv;
 
   if signal != nil {
+    if signal["type"] == "ErrorSignal" {
+      return nil;
+    }
     if signal["type"] != "ReturnSignal" {
       reportUnhandledSelfSignal(state, signal);
       return nil;
@@ -578,7 +684,11 @@ fn executeSelfFunctionBody(state, statements) {
 
 // 计算一元表达式，目前支持 ! 和一元负号。
 fn evaluateSelfUnaryExpr(state, expression) {
+  let beforeCount = selfErrorCount(state);
   let right = evaluateSelfExpr(state, expression["right"]);
+  if selfErrorCount(state) > beforeCount {
+    return nil;
+  }
   let operator = expression["operator"];
   if operator == "!" {
     return !isSelfTruthy(right);
@@ -591,23 +701,41 @@ fn evaluateSelfUnaryExpr(state, expression) {
 
 // 计算二元表达式，and/or 会先判断左侧以支持短路求值。
 fn evaluateSelfBinaryExpr(state, expression) {
+  let beforeCount = selfErrorCount(state);
   let left = evaluateSelfExpr(state, expression["left"]);
+  if selfErrorCount(state) > beforeCount {
+    return nil;
+  }
   let operator = expression["operator"];
 
   if operator == "or" {
     if isSelfTruthy(left) {
       return left;
     }
-    return evaluateSelfExpr(state, expression["right"]);
+    beforeCount = selfErrorCount(state);
+    let rightValue = evaluateSelfExpr(state, expression["right"]);
+    if selfErrorCount(state) > beforeCount {
+      return nil;
+    }
+    return rightValue;
   }
   if operator == "and" {
     if !isSelfTruthy(left) {
       return left;
     }
-    return evaluateSelfExpr(state, expression["right"]);
+    beforeCount = selfErrorCount(state);
+    let rightValue = evaluateSelfExpr(state, expression["right"]);
+    if selfErrorCount(state) > beforeCount {
+      return nil;
+    }
+    return rightValue;
   }
 
+  beforeCount = selfErrorCount(state);
   let right = evaluateSelfExpr(state, expression["right"]);
+  if selfErrorCount(state) > beforeCount {
+    return nil;
+  }
 
   if operator == "+" {
     return left + right;

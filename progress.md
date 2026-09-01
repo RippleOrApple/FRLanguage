@@ -111,7 +111,18 @@
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_bootstrap_acceptance.fr`：输出 `passed: true`、`case_count: 17`、`failed_count: 0`。
 - 最终重新验证 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：121 个测试通过。
+- 开始阶段 27.3：给自解释器新增 `ErrorSignal`、错误计数和错误停止传播。
+- 调整 `executeVarStmt`、`executePrintStmt`、表达式语句、`if`、`while`、`return`、函数调用、Future await、索引、集合字面量和二元表达式等路径，避免错误后继续执行或产生级联假错误。
+- 拆分错误样例：新增 `fr_parser_call_error_sample.fr.txt` 和 `fr_parser_await_error_sample.fr.txt`，让非法调用和非法 await 在停止策略下仍有独立覆盖。
+- 更新默认 bootstrap expected，当前默认验收集合从 15 个增加到 17 个，错误样例遇到第一个运行时错误后输出为空。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_self_interpreter_stops_after_first_runtime_error tests.test_examples.ExampleTest.test_fr_self_interpreter_reports_invalid_call_error tests.test_examples.ExampleTest.test_fr_self_interpreter_reports_invalid_await_error tests.test_examples.ExampleTest.test_fr_bootstrap_expectations_report_passed_cases tests.test_examples.ExampleTest.test_fr_bootstrap_acceptance_example_runs tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_nested_bootstrap_acceptance`：6 个相关测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：46 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：123 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
 - 开始阶段 24.2：新增 `examples/fr_parser_control_flow_sample.fr.txt`，覆盖 `if`、`else`、`while` 和 block。
 - 新增 FR Parser 控制流对照测试和自解释器控制流端到端测试，先观察到 FR Parser 还无法把 `if/while` 解析成对应 AST。
 - 扩展 `examples/fr_parser_helpers.fr`，新增 `BlockStmt`、`IfStmt` 和 `WhileStmt` AST Map，以及 `parseBlock`、`parseIfStatement`、`parseWhileStatement`。
