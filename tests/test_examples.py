@@ -646,6 +646,24 @@ class ExampleTest(unittest.TestCase):
             self.python_program_output(source_path),
         )
 
+    def test_fr_parser_matches_python_parser_for_builtins_program(self) -> None:
+        """验证 FR Parser 子集能解析调用内置函数的程序 AST。"""
+        source_path = "fr_parser_builtins_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_parser(source_path),
+            self.python_parser_ast(source_path),
+        )
+
+    def test_fr_self_interpreter_runs_builtins_program(self) -> None:
+        """验证 FR 写的解释器子集能桥接常用内置函数。"""
+        source_path = "fr_parser_builtins_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_self_interpreter(source_path),
+            self.python_program_output(source_path),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

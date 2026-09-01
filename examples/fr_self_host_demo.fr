@@ -10,3 +10,4 @@ print(runSelfHostedSource(readFile("fr_parser_scope_sample.fr.txt")));
 print(runSelfHostedSource(readFile("fr_parser_logic_sample.fr.txt")));
 print(runSelfHostedSource(readFile("fr_parser_break_sample.fr.txt")));
 print(runSelfHostedSource(readFile("fr_parser_future_sample.fr.txt")));
+print(runSelfHostedSource(readFile("fr_parser_builtins_sample.fr.txt")));

@@ -5,12 +5,41 @@ fn createSelfEnv(enclosing) {
 
 // 创建自举解释器状态，保存当前环境链和输出列表。
 fn createSelfInterpreter() {
-  return {"env": createSelfEnv(nil), "output": []};
+  let state = {"env": createSelfEnv(nil), "output": []};
+  defineSelfNativeFunctions(state);
+  return state;
 }
 
 // 在当前环境中定义变量，主要用于 let 和函数声明。
 fn defineSelfVariable(state, name, value) {
   state["env"]["values"][name] = value;
+}
+
+// 定义一个自举原生函数占位对象，调用时会转发给宿主 FR 内置函数。
+fn defineSelfNativeFunction(state, name, arity) {
+  defineSelfVariable(state, name, {
+    "type": "SelfNativeFunction",
+    "name": name,
+    "arity": arity
+  });
+}
+
+// 初始化目标程序可调用的常用内置函数。
+fn defineSelfNativeFunctions(state) {
+  defineSelfNativeFunction(state, "len", 1);
+  defineSelfNativeFunction(state, "charAt", 2);
+  defineSelfNativeFunction(state, "substring", 3);
+  defineSelfNativeFunction(state, "isDigit", 1);
+  defineSelfNativeFunction(state, "isAlpha", 1);
+  defineSelfNativeFunction(state, "isAlphaNumeric", 1);
+  defineSelfNativeFunction(state, "codePoint", 1);
+  defineSelfNativeFunction(state, "type", 1);
+  defineSelfNativeFunction(state, "str", 1);
+  defineSelfNativeFunction(state, "number", 1);
+  defineSelfNativeFunction(state, "hasKey", 2);
+  defineSelfNativeFunction(state, "push", 2);
+  defineSelfNativeFunction(state, "pop", 1);
+  defineSelfNativeFunction(state, "readFile", 1);
 }
 
 // 从指定环境开始查找变量名所在的环境节点。
@@ -294,7 +323,7 @@ fn evaluateSelfCallExpr(state, expression) {
     push(arguments, evaluateSelfExpr(state, argumentExprs[index]));
     index = index + 1;
   }
-  return callSelfFunction(state, callee, arguments);
+  return callSelfCallable(state, callee, arguments);
 }
 
 // 创建自举 Future；它先保存待执行 body，直到 await 时才运行。
@@ -330,6 +359,62 @@ fn runSelfFuture(state, futureValue) {
     return nil;
   }
   futureValue["value"] = nil;
+  return nil;
+}
+
+// 根据函数对象类型分派调用自举函数或自举原生函数。
+fn callSelfCallable(state, functionValue, arguments) {
+  if functionValue["type"] == "SelfNativeFunction" {
+    return callSelfNativeFunction(state, functionValue, arguments);
+  }
+  return callSelfFunction(state, functionValue, arguments);
+}
+
+// 调用由宿主解释器提供的常用内置函数。
+fn callSelfNativeFunction(state, functionValue, arguments) {
+  let name = functionValue["name"];
+  if name == "len" {
+    return len(arguments[0]);
+  }
+  if name == "charAt" {
+    return charAt(arguments[0], arguments[1]);
+  }
+  if name == "substring" {
+    return substring(arguments[0], arguments[1], arguments[2]);
+  }
+  if name == "isDigit" {
+    return isDigit(arguments[0]);
+  }
+  if name == "isAlpha" {
+    return isAlpha(arguments[0]);
+  }
+  if name == "isAlphaNumeric" {
+    return isAlphaNumeric(arguments[0]);
+  }
+  if name == "codePoint" {
+    return codePoint(arguments[0]);
+  }
+  if name == "type" {
+    return type(arguments[0]);
+  }
+  if name == "str" {
+    return str(arguments[0]);
+  }
+  if name == "number" {
+    return number(arguments[0]);
+  }
+  if name == "hasKey" {
+    return hasKey(arguments[0], arguments[1]);
+  }
+  if name == "push" {
+    return push(arguments[0], arguments[1]);
+  }
+  if name == "pop" {
+    return pop(arguments[0]);
+  }
+  if name == "readFile" {
+    return readFile(arguments[0]);
+  }
   return nil;
 }
 

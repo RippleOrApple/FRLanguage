@@ -103,7 +103,7 @@ print(missing);
 - 没有类和对象系统
 - Runtime 是协作式任务队列，不是真正多线程或 IO 异步
 - `await` 当前通过 Runtime 队列运行 Future 任务，还没有完整的暂停和恢复调用栈模型
-- 自举工具链目前只覆盖子集：FR Parser/Interpreter 子集可运行变量、基础表达式、`print`、List/Map 字面量、索引读写、`and/or` 短路逻辑、`if`、`while`、`break`、block 局部作用域、函数调用、闭包读取、跨函数全局调用、递归、`return` 和最小 `future/await`
+- 自举工具链目前只覆盖子集：FR Parser/Interpreter 子集可运行变量、基础表达式、`print`、List/Map 字面量、索引读写、`and/or` 短路逻辑、`if`、`while`、`break`、block 局部作用域、函数调用、常用内置函数桥接、闭包读取、跨函数全局调用、递归、`return` 和最小 `future/await`
 
 ## 后续方向
 

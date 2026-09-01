@@ -128,6 +128,18 @@
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 提交并推送阶段 24.7：`e027ead Add self-hosted future support`。
+- 开始阶段 25.1：新增 `examples/fr_parser_builtins_sample.fr.txt`，覆盖目标程序调用 `len`、`push`、`pop`、`hasKey`、`type`、`str`、`number`、`substring`、`charAt` 和 `isAlphaNumeric`。
+- 新增 FR Parser 内置函数调用对照测试和自解释器内置函数桥接端到端测试；新增测试先按预期失败，暴露目标程序里的内置函数名在自解释器环境中未定义。
+- 扩展 `examples/fr_interpreter_helpers.fr`，启动自解释器时注册 `SelfNativeFunction`，调用时转发到宿主 FR 内置函数。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_builtins_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_builtins_program`：2 个内置桥接自举测试通过。
+- 扩展 `examples/fr_self_host_demo.fr`，新增内置函数桥接样例输出 `[2, 3, [1, 2, 3], 3, [1, 2], true, false, map, 42!, FR, R, true]`。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：29 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出九个自举样例结果。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：106 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
 - 提交并推送阶段 24.6：`89838a8 Add self-hosted break support`。
 - 开始阶段 24.7：新增 `examples/fr_parser_future_sample.fr.txt`，覆盖 Future 延迟执行、await 触发执行、结果缓存，以及 Future 捕获函数局部变量。
 - 新增 FR Parser Future 对照测试和自解释器 Future 端到端测试；新增测试先按预期失败，暴露 `future/await` 被解析成 nil 且无法运行的问题。

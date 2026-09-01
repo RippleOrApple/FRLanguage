@@ -1,0 +1,15 @@
+let items = [1, 2];
+print(len(items));
+print(push(items, 3));
+print(items);
+print(pop(items));
+print(items);
+
+let config = {"name": "FR", "version": number("1")};
+print(hasKey(config, "name"));
+print(hasKey(config, "missing"));
+print(type(config));
+print(str(42) + "!");
+print(substring("FRLanguage", 0, 2));
+print(charAt("FR", 1));
+print(isAlphaNumeric("_"));

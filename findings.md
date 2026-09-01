@@ -43,6 +43,8 @@
 - 函数调用边界暂时不会完整复刻 Python 对非法 break 的运行时错误；在自举错误模型补齐前，重点先覆盖 while 内合法 break。
 - 自举 Future 不必一开始复刻 Python Runtime 队列；用 Map 保存 `pending/resolved`、body、closure 和 value，可以先验证延迟执行、await 触发和结果缓存。
 - Future body 记录声明时环境后，可以覆盖“函数返回 Future，await 时仍能读取函数局部参数”的关键闭包场景。
+- 目标程序调用 `len`、`push`、`str` 等内置函数时，自解释器不能直接拿宿主全局函数对象；用 `SelfNativeFunction` Map 作为占位，再由 FR helper 分派到宿主内置函数，能保持自举解释器自己的环境模型。
+- 常用内置函数桥接后，自解释器运行目标程序时可以覆盖字符串处理、集合修改、Map membership、类型查询、转换和文件读取这批自举工具链高频能力。
 
 ## 路线判断
 
