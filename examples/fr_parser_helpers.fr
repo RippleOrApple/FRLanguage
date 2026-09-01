@@ -132,6 +132,26 @@ fn exprStmt(expression) {
   return {"type": "ExprStmt", "expression": expression};
 }
 
+// 创建 block 语句 AST Map。
+fn blockStmt(statements) {
+  return {"type": "BlockStmt", "statements": statements};
+}
+
+// 创建 if 语句 AST Map。
+fn ifStmt(condition, thenBranch, elseBranch) {
+  return {
+    "type": "IfStmt",
+    "condition": condition,
+    "then_branch": thenBranch,
+    "else_branch": elseBranch
+  };
+}
+
+// 创建 while 语句 AST Map。
+fn whileStmt(condition, body) {
+  return {"type": "WhileStmt", "condition": condition, "body": body};
+}
+
 // 把源码字符串先交给 FR Lexer，再解析成 Program AST Map。
 fn parseSource(source) {
   return parseTokens(scan(source));
@@ -166,12 +186,52 @@ fn parseVarDeclaration(parser) {
   return varStmt(name["lexeme"], initializer);
 }
 
-// 解析普通语句，目前支持 print 和表达式语句。
+// 解析普通语句，支持 print、if、while、block 和表达式语句。
 fn parseStatement(parser) {
   if matchType(parser, "PRINT") {
     return parsePrintStatement(parser);
   }
+  if matchType(parser, "IF") {
+    return parseIfStatement(parser);
+  }
+  if matchType(parser, "WHILE") {
+    return parseWhileStatement(parser);
+  }
+  if matchType(parser, "LEFT_BRACE") {
+    return blockStmt(parseBlock(parser));
+  }
   return parseExpressionStatement(parser);
+}
+
+// 解析 if/else 条件分支语句。
+fn parseIfStatement(parser) {
+  let condition = parseExpression(parser);
+  consumeType(parser, "LEFT_BRACE", "if 条件后需要 '{'");
+  let thenBranch = blockStmt(parseBlock(parser));
+  let elseBranch = nil;
+  if matchType(parser, "ELSE") {
+    consumeType(parser, "LEFT_BRACE", "else 后需要 '{'");
+    elseBranch = blockStmt(parseBlock(parser));
+  }
+  return ifStmt(condition, thenBranch, elseBranch);
+}
+
+// 解析 while 循环语句。
+fn parseWhileStatement(parser) {
+  let condition = parseExpression(parser);
+  consumeType(parser, "LEFT_BRACE", "while 条件后需要 '{'");
+  let body = blockStmt(parseBlock(parser));
+  return whileStmt(condition, body);
+}
+
+// 解析已经消费左大括号后的语句列表。
+fn parseBlock(parser) {
+  let statements = [];
+  while !checkType(parser, "RIGHT_BRACE") and !isParserAtEnd(parser) {
+    push(statements, parseDeclaration(parser));
+  }
+  consumeType(parser, "RIGHT_BRACE", "代码块缺少 '}'");
+  return statements;
 }
 
 // 解析 print(表达式); 语句。

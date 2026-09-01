@@ -41,6 +41,18 @@ fn executeStatement(state, statement) {
     evaluateSelfExpr(state, statement["expression"]);
     return nil;
   }
+  if statementType == "BlockStmt" {
+    executeSelfBlock(state, statement);
+    return nil;
+  }
+  if statementType == "IfStmt" {
+    executeSelfIfStmt(state, statement);
+    return nil;
+  }
+  if statementType == "WhileStmt" {
+    executeSelfWhileStmt(state, statement);
+    return nil;
+  }
   return nil;
 }
 
@@ -53,6 +65,35 @@ fn executeVarStmt(state, statement) {
 fn executePrintStmt(state, statement) {
   let value = evaluateSelfExpr(state, statement["expression"]);
   push(state["output"], stringifySelfValue(value));
+}
+
+// 执行 block 中的语句；自举子集暂时复用同一个环境。
+fn executeSelfBlock(state, statement) {
+  let statements = statement["statements"];
+  let index = 0;
+  while index < len(statements) {
+    executeStatement(state, statements[index]);
+    index = index + 1;
+  }
+}
+
+// 执行 if 语句，根据条件真假选择分支。
+fn executeSelfIfStmt(state, statement) {
+  if isSelfTruthy(evaluateSelfExpr(state, statement["condition"])) {
+    executeStatement(state, statement["then_branch"]);
+    return nil;
+  }
+  if statement["else_branch"] != nil {
+    executeStatement(state, statement["else_branch"]);
+  }
+  return nil;
+}
+
+// 执行 while 语句，条件为真时重复执行循环体。
+fn executeSelfWhileStmt(state, statement) {
+  while isSelfTruthy(evaluateSelfExpr(state, statement["condition"])) {
+    executeStatement(state, statement["body"]);
+  }
 }
 
 // 计算自举 AST 表达式，并返回运行时值。

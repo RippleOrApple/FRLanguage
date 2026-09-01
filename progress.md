@@ -93,3 +93,13 @@
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出基础样例和集合样例结果。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 开始阶段 24.2：新增 `examples/fr_parser_control_flow_sample.fr.txt`，覆盖 `if`、`else`、`while` 和 block。
+- 新增 FR Parser 控制流对照测试和自解释器控制流端到端测试，先观察到 FR Parser 还无法把 `if/while` 解析成对应 AST。
+- 扩展 `examples/fr_parser_helpers.fr`，新增 `BlockStmt`、`IfStmt` 和 `WhileStmt` AST Map，以及 `parseBlock`、`parseIfStatement`、`parseWhileStatement`。
+- 扩展 `examples/fr_interpreter_helpers.fr`，新增 block、if 和 while 的执行逻辑；自举子集暂时复用同一个环境，不实现 block 局部作用域。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_control_flow_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_control_flow_program`：2 个控制流自举测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：93 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出 `[7, false]`、`[2, [1, 42, 3], FR, 42]` 和 `[14]`。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。

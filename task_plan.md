@@ -32,7 +32,7 @@
 - [x] 阶段 23：打通最小自举闭环：Python FR 解释器运行 FR 工具链，FR 工具链运行小型 FR 程序。
 - [ ] 阶段 24：逐步扩展 FR Parser/Interpreter，覆盖 `if`、`while`、函数和 Future。
   - [x] 阶段 24.1：扩展 FR Parser/Interpreter 子集，支持 List/Map 字面量、索引读取、变量赋值和索引赋值。
-  - [ ] 阶段 24.2：扩展 FR Parser/Interpreter 子集，支持 `if` 和 `while`。
+  - [x] 阶段 24.2：扩展 FR Parser/Interpreter 子集，支持 `if`、`while` 和 block。
   - [ ] 阶段 24.3：扩展 FR Parser/Interpreter 子集，支持函数声明、函数调用和 `return`。
   - [ ] 阶段 24.4：评估 Future 是否进入自举子集，避免过早复杂化。
 

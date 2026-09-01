@@ -7,9 +7,11 @@ from typing import Any
 from frlang.ast import (
     AssignExpr,
     BinaryExpr,
+    BlockStmt,
     Expr,
     ExprStmt,
     GroupingExpr,
+    IfStmt,
     IndexAssignExpr,
     IndexExpr,
     ListExpr,
@@ -21,6 +23,7 @@ from frlang.ast import (
     UnaryExpr,
     VarStmt,
     VariableExpr,
+    WhileStmt,
 )
 from frlang.errors import LexerError
 from frlang.interpreter import Interpreter, MapKey
@@ -120,6 +123,30 @@ class ExampleTest(unittest.TestCase):
             return {
                 "type": "PrintStmt",
                 "expression": self.normalize_python_expr(statement.expression),
+            }
+        if isinstance(statement, BlockStmt):
+            return {
+                "type": "BlockStmt",
+                "statements": [
+                    self.normalize_python_stmt(child)
+                    for child in statement.statements
+                ],
+            }
+        if isinstance(statement, IfStmt):
+            else_branch = None
+            if statement.else_branch is not None:
+                else_branch = self.normalize_python_stmt(statement.else_branch)
+            return {
+                "type": "IfStmt",
+                "condition": self.normalize_python_expr(statement.condition),
+                "then_branch": self.normalize_python_stmt(statement.then_branch),
+                "else_branch": else_branch,
+            }
+        if isinstance(statement, WhileStmt):
+            return {
+                "type": "WhileStmt",
+                "condition": self.normalize_python_expr(statement.condition),
+                "body": self.normalize_python_stmt(statement.body),
             }
         if isinstance(statement, ExprStmt):
             return {
@@ -460,6 +487,24 @@ class ExampleTest(unittest.TestCase):
     def test_fr_self_interpreter_runs_collection_program(self) -> None:
         """验证 FR 写的解释器子集能运行集合和索引程序。"""
         source_path = "fr_parser_collections_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_self_interpreter(source_path),
+            self.python_program_output(source_path),
+        )
+
+    def test_fr_parser_matches_python_parser_for_control_flow_program(self) -> None:
+        """验证 FR Parser 子集能解析 if、while 和 block AST。"""
+        source_path = "fr_parser_control_flow_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_parser(source_path),
+            self.python_parser_ast(source_path),
+        )
+
+    def test_fr_self_interpreter_runs_control_flow_program(self) -> None:
+        """验证 FR 写的解释器子集能运行 if 和 while 程序。"""
+        source_path = "fr_parser_control_flow_sample.fr.txt"
 
         self.assertEqual(
             self.run_fr_self_interpreter(source_path),

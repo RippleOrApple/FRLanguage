@@ -4,3 +4,4 @@ import "fr_interpreter_helpers.fr";
 
 print(runSelfHostedSource(readFile("fr_parser_basic_sample.fr.txt")));
 print(runSelfHostedSource(readFile("fr_parser_collections_sample.fr.txt")));
+print(runSelfHostedSource(readFile("fr_parser_control_flow_sample.fr.txt")));
