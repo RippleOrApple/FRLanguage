@@ -116,6 +116,30 @@ class ExampleTest(unittest.TestCase):
         interpreter.interpret(program)
         return self.normalize_fr_value(interpreter.globals.values["actual"])
 
+    def run_fr_self_future_state_probe(self, source_path: str) -> dict[str, Any]:
+        """运行目标程序后读取自举 Future 对象状态，验证 reject 语义。"""
+        program_source = f"""
+        import "toolchain/lexer.fr";
+        import "toolchain/parser.fr";
+        import "toolchain/interpreter.fr";
+        let state = createSelfInterpreter();
+        let program = parseSource(readFile("{source_path}"));
+        executeProgram(state, program);
+        let taskEnv = findSelfEnv(state["env"], "task");
+        let task = taskEnv["values"]["task"];
+        let actual = {{
+          "output": state["output"],
+          "errors": state["errors"],
+          "future_state": task["state"],
+          "future_error": task["error"]
+        }};
+        """
+        tokens = Lexer(program_source).scan_tokens()
+        program = Parser(tokens).parse()
+        interpreter = Interpreter(base_path=Path("examples"))
+        interpreter.interpret(program)
+        return self.normalize_fr_value(interpreter.globals.values["actual"])
+
     def run_legacy_fr_self_interpreter(self, source_path: str) -> list[str]:
         """通过旧 helper 入口运行自解释器，验证兼容导入仍可用。"""
         program_source = f"""
@@ -719,6 +743,32 @@ class ExampleTest(unittest.TestCase):
             self.python_program_output(source_path),
         )
 
+    def test_fr_self_interpreter_rejects_future_runtime_error(self) -> None:
+        """验证 Future body 运行时错误会在 await 时停止外层执行。"""
+        result = self.run_fr_self_interpreter_result(
+            "fr_parser_future_reject_sample.fr.txt"
+        )
+
+        self.assertEqual(result["output"], ["before"])
+        self.assertEqual(
+            [error["message"] for error in result["errors"]],
+            ["变量 missing 未定义"],
+        )
+
+    def test_fr_self_future_state_probe_records_rejected_future(self) -> None:
+        """验证出错的自举 Future 会保存 rejected 状态和错误消息。"""
+        result = self.run_fr_self_future_state_probe(
+            "fr_parser_future_reject_sample.fr.txt"
+        )
+
+        self.assertEqual(result["output"], ["before"])
+        self.assertEqual(result["future_state"], "rejected")
+        self.assertEqual(result["future_error"], "变量 missing 未定义")
+        self.assertEqual(
+            [error["message"] for error in result["errors"]],
+            ["变量 missing 未定义"],
+        )
+
     def test_fr_parser_matches_python_parser_for_builtins_program(self) -> None:
         """验证 FR Parser 子集能解析调用内置函数的程序 AST。"""
         source_path = "fr_parser_builtins_sample.fr.txt"
@@ -787,17 +837,17 @@ class ExampleTest(unittest.TestCase):
         result = self.run_fr_bootstrap_acceptance()
 
         self.assertTrue(result["passed"])
-        self.assertEqual(result["case_count"], 17)
-        self.assertEqual(result["passed_count"], 17)
+        self.assertEqual(result["case_count"], 18)
+        self.assertEqual(result["passed_count"], 18)
         self.assertEqual(result["failed_count"], 0)
-        self.assertEqual(len(result["cases"]), 17)
+        self.assertEqual(len(result["cases"]), 18)
         self.assertTrue(all(case["passed"] for case in result["cases"]))
         self.assertEqual(
-            result["cases"][10]["errors"],
+            result["cases"][11]["errors"],
             ["变量 missing 未定义"],
         )
         self.assertEqual(
-            result["cases"][16]["errors"],
+            result["cases"][17]["errors"],
             ["break 只能用于 while 循环"],
         )
 
@@ -806,8 +856,9 @@ class ExampleTest(unittest.TestCase):
         output = self.run_example("examples/fr_bootstrap_acceptance.fr")
 
         self.assertIn('"passed": true', output)
-        self.assertIn('"case_count": 17', output)
+        self.assertIn('"case_count": 18', output)
         self.assertIn('"failed_count": 0', output)
+        self.assertIn('"path": "fr_parser_future_reject_sample.fr.txt"', output)
         self.assertIn('"path": "fr_parser_error_sample.fr.txt"', output)
         self.assertIn('"path": "fr_parser_call_error_sample.fr.txt"', output)
         self.assertIn('"path": "fr_parser_await_error_sample.fr.txt"', output)
@@ -828,7 +879,7 @@ class ExampleTest(unittest.TestCase):
             "fr_nested_bootstrap_acceptance.fr.txt"
         )
 
-        self.assertEqual(result["output"], ["true", "17", "0"])
+        self.assertEqual(result["output"], ["true", "18", "0"])
         self.assertEqual(result["errors"], [])
 
     def test_fr_toolchain_self_load_probe_example_runs(self) -> None:

@@ -121,6 +121,11 @@ fn defaultBootstrapExpectations() {
       "errors": []
     },
     {
+      "path": "fr_parser_future_reject_sample.fr.txt",
+      "output": ["before"],
+      "errors": ["变量 missing 未定义"]
+    },
+    {
       "path": "fr_parser_builtins_sample.fr.txt",
       "output": ["2", "3", "[1, 2, 3]", "3", "[1, 2]", "true", "false", "map", "42!", "FR", "R", "true"],
       "errors": []

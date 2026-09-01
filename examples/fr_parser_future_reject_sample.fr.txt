@@ -1,0 +1,8 @@
+let task = future {
+  print(missing);
+  return 1;
+};
+
+print("before");
+print(await task);
+print("after");

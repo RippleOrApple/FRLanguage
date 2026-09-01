@@ -522,7 +522,8 @@ fn evaluateSelfFutureExpr(state, expression) {
     "state": "pending",
     "body": expression["body"],
     "closure": state["env"],
-    "value": nil
+    "value": nil,
+    "error": nil
   };
 }
 
@@ -548,28 +549,41 @@ fn evaluateSelfAwaitExpr(state, expression) {
       return nil;
     }
   }
+  if futureValue["state"] == "rejected" {
+    addSelfRuntimeError(state, futureValue["error"]);
+    return nil;
+  }
   return futureValue["value"];
 }
 
 // 执行 Future body，并把 return 值或 nil 写回 Future。
 fn runSelfFuture(state, futureValue) {
   let previousEnv = state["env"];
+  let beforeCount = selfErrorCount(state);
   state["env"] = createSelfEnv(futureValue["closure"]);
   let signal = executeSelfFunctionBody(state, futureValue["body"]);
   state["env"] = previousEnv;
 
-  futureValue["state"] = "resolved";
   if signal != nil and signal["type"] == "ErrorSignal" {
+    futureValue["state"] = "rejected";
     futureValue["value"] = nil;
+    futureValue["error"] = state["errors"][beforeCount]["message"];
     return nil;
   }
   if signal != nil and signal["type"] == "ReturnSignal" {
+    futureValue["state"] = "resolved";
     futureValue["value"] = signal["value"];
     return nil;
   }
   if signal != nil and signal["type"] == "BreakSignal" {
-    addSelfRuntimeError(state, "break 只能用于 while 循环");
+    let message = "break 只能用于 while 循环";
+    addSelfRuntimeError(state, message);
+    futureValue["state"] = "rejected";
+    futureValue["value"] = nil;
+    futureValue["error"] = message;
+    return nil;
   }
+  futureValue["state"] = "resolved";
   futureValue["value"] = nil;
   return nil;
 }

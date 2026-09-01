@@ -112,6 +112,19 @@
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_bootstrap_acceptance.fr`：输出 `passed: true`、`case_count: 17`、`failed_count: 0`。
+- 开始阶段 27.5.1：补自举 Future reject 状态和 await 失败传播。
+- 扩展 `examples/toolchain/interpreter.fr`：`SelfFuture` 新增 `error` 字段，`runSelfFuture` 在 Future body 出错或非法 break 时写入 `rejected` 状态，`await` 遇到已 rejected 的 Future 会重新记录失败消息。
+- 新增 `examples/fr_parser_future_reject_sample.fr.txt`，覆盖 Future body 运行时错误、await 触发失败、外层执行停止。
+- 更新默认 bootstrap expected，当前默认验收集合从 17 个增加到 18 个。
+- 新增 examples 测试，确认 Future body 错误会在 await 时停止外层执行，并直接检查自举 Future 对象保存了 `rejected` 状态和错误消息。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_self_interpreter_rejects_future_runtime_error tests.test_examples.ExampleTest.test_fr_self_future_state_probe_records_rejected_future tests.test_examples.ExampleTest.test_fr_bootstrap_expectations_report_passed_cases tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_nested_bootstrap_acceptance`：4 个相关测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_bootstrap_acceptance.fr`：输出 `passed: true`、`case_count: 18`、`failed_count: 0`。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_toolchain_self_load_probe.fr`：输出 `{"output": [], "errors": []}`。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：48 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：125 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
 - 最终重新验证 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：121 个测试通过。
 - 开始阶段 27.3：给自解释器新增 `ErrorSignal`、错误计数和错误停止传播。
 - 调整 `executeVarStmt`、`executePrintStmt`、表达式语句、`if`、`while`、`return`、函数调用、Future await、索引、集合字面量和二元表达式等路径，避免错误后继续执行或产生级联假错误。

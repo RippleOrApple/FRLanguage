@@ -183,7 +183,7 @@ FR 写的工具链核心组件。
 - `bootstrap.fr`：用 FR 组织多组自举样例运行，支持 expected 对照，并返回通过数、失败数和结构化验证结果。
 - 支撑 `fr_self_host_demo.fr` 和 `tests/test_examples.py` 中的端到端自举对照。
 - `fr_toolchain_self_load_probe.fr`：用 FR 自解释器加载 `toolchain/bootstrap.fr`，验证工具链文件自身可作为目标程序被读取、解析和执行。
-- `fr_nested_bootstrap_acceptance.fr.txt`：作为二层自举目标程序，导入 FR bootstrap 并运行默认 17 个验收用例。
+- `fr_nested_bootstrap_acceptance.fr.txt`：作为二层自举目标程序，导入 FR bootstrap 并运行默认 18 个验收用例。
 
 `examples/fr_lexer_helpers.fr`、`examples/fr_parser_helpers.fr` 和 `examples/fr_interpreter_helpers.fr` 目前保留为兼容入口，它们会导入 `toolchain/` 下的新文件。
 
