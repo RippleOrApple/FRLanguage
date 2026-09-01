@@ -87,6 +87,20 @@ class ExampleTest(unittest.TestCase):
         interpreter.interpret(program)
         return self.normalize_fr_value(interpreter.globals.values["actual"])
 
+    def run_fr_self_interpreter_result(self, source_path: str) -> dict[str, Any]:
+        """运行 FR 写的解释器子集，并返回输出和错误诊断。"""
+        program_source = f"""
+        import "fr_lexer_helpers.fr";
+        import "fr_parser_helpers.fr";
+        import "fr_interpreter_helpers.fr";
+        let actual = runSelfHostedSourceResult(readFile("{source_path}"));
+        """
+        tokens = Lexer(program_source).scan_tokens()
+        program = Parser(tokens).parse()
+        interpreter = Interpreter(base_path=Path("examples"))
+        interpreter.interpret(program)
+        return self.normalize_fr_value(interpreter.globals.values["actual"])
+
     def python_program_output(self, source_path: str) -> list[str]:
         """运行 Python 实现的 FR 语言链路，并返回输出列表。"""
         source = Path("examples", source_path).read_text(encoding="utf-8")
@@ -662,6 +676,20 @@ class ExampleTest(unittest.TestCase):
         self.assertEqual(
             self.run_fr_self_interpreter(source_path),
             self.python_program_output(source_path),
+        )
+
+    def test_fr_self_interpreter_reports_basic_runtime_errors(self) -> None:
+        """验证 FR 写的解释器子集能记录基础运行时错误。"""
+        result = self.run_fr_self_interpreter_result("fr_parser_error_sample.fr.txt")
+        messages = [error["message"] for error in result["errors"]]
+
+        self.assertEqual(
+            messages,
+            [
+                "变量 missing 未定义",
+                "只能调用函数",
+                "await 只能用于 Future",
+            ],
         )
 
 

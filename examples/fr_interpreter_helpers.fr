@@ -5,7 +5,7 @@ fn createSelfEnv(enclosing) {
 
 // 创建自举解释器状态，保存当前环境链和输出列表。
 fn createSelfInterpreter() {
-  let state = {"env": createSelfEnv(nil), "output": []};
+  let state = {"env": createSelfEnv(nil), "output": [], "errors": []};
   defineSelfNativeFunctions(state);
   return state;
 }
@@ -59,7 +59,13 @@ fn getSelfVariable(state, name) {
   if env != nil {
     return env["values"][name];
   }
+  addSelfRuntimeError(state, "变量 " + name + " 未定义");
   return nil;
+}
+
+// 记录自举解释器运行时错误，先保留消息文本。
+fn addSelfRuntimeError(state, message) {
+  push(state["errors"], {"message": message});
 }
 
 // 沿着环境链给已有变量赋值；找不到时先写入当前环境。
@@ -75,15 +81,26 @@ fn assignSelfVariable(state, name, value) {
 
 // 运行一段源码：先用 FR Parser 解析，再执行 AST。
 fn runSelfHostedSource(source) {
+  return runSelfHostedSourceResult(source)["output"];
+}
+
+// 运行一段源码，并返回输出列表和错误诊断。
+fn runSelfHostedSourceResult(source) {
   let program = parseSource(source);
-  return runSelfHostedProgram(program);
+  return runSelfHostedProgramResult(program);
 }
 
 // 运行 Program AST Map，并返回 print 收集到的输出。
 fn runSelfHostedProgram(program) {
+  return runSelfHostedProgramResult(program)["output"];
+}
+
+// 运行 Program AST Map，并同时返回输出和错误诊断。
+fn runSelfHostedProgramResult(program) {
   let state = createSelfInterpreter();
+  state["errors"] = program["errors"];
   executeProgram(state, program);
-  return state["output"];
+  return {"output": state["output"], "errors": state["errors"]};
 }
 
 // 依次执行 Program 中的每条语句。
@@ -340,6 +357,14 @@ fn evaluateSelfFutureExpr(state, expression) {
 // await 自举 Future；pending 时执行一次，之后复用已保存结果。
 fn evaluateSelfAwaitExpr(state, expression) {
   let futureValue = evaluateSelfExpr(state, expression["expression"]);
+  if type(futureValue) != "map" {
+    addSelfRuntimeError(state, "await 只能用于 Future");
+    return nil;
+  }
+  if !hasKey(futureValue, "type") or futureValue["type"] != "SelfFuture" {
+    addSelfRuntimeError(state, "await 只能用于 Future");
+    return nil;
+  }
   if futureValue["state"] == "pending" {
     runSelfFuture(state, futureValue);
   }
@@ -364,10 +389,22 @@ fn runSelfFuture(state, futureValue) {
 
 // 根据函数对象类型分派调用自举函数或自举原生函数。
 fn callSelfCallable(state, functionValue, arguments) {
+  if type(functionValue) != "map" {
+    addSelfRuntimeError(state, "只能调用函数");
+    return nil;
+  }
+  if !hasKey(functionValue, "type") {
+    addSelfRuntimeError(state, "只能调用函数");
+    return nil;
+  }
   if functionValue["type"] == "SelfNativeFunction" {
     return callSelfNativeFunction(state, functionValue, arguments);
   }
-  return callSelfFunction(state, functionValue, arguments);
+  if functionValue["type"] == "SelfFunction" {
+    return callSelfFunction(state, functionValue, arguments);
+  }
+  addSelfRuntimeError(state, "只能调用函数");
+  return nil;
 }
 
 // 调用由宿主解释器提供的常用内置函数。

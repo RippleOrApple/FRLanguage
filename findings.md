@@ -45,6 +45,8 @@
 - Future body 记录声明时环境后，可以覆盖“函数返回 Future，await 时仍能读取函数局部参数”的关键闭包场景。
 - 目标程序调用 `len`、`push`、`str` 等内置函数时，自解释器不能直接拿宿主全局函数对象；用 `SelfNativeFunction` Map 作为占位，再由 FR helper 分派到宿主内置函数，能保持自举解释器自己的环境模型。
 - 常用内置函数桥接后，自解释器运行目标程序时可以覆盖字符串处理、集合修改、Map membership、类型查询、转换和文件读取这批自举工具链高频能力。
+- `runSelfHostedSourceResult` 比只返回输出的 `runSelfHostedSource` 更适合后续测试错误路径；正常 demo 仍可继续使用输出列表，避免打扰已有学习示例。
+- 在 FR 还没有异常机制前，自举运行时错误先进入 `state["errors"]` 列表；这能先解决可观察性，后续再补“错误后是否停止执行”的语义。
 
 ## 路线判断
 

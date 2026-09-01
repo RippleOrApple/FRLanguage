@@ -128,6 +128,19 @@
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 提交并推送阶段 25.1：`4966abf Add self-hosted native bridge`。
+- 开始阶段 25.2：新增 `examples/fr_parser_error_sample.fr.txt`，覆盖缺失变量、非法调用和非法 await。
+- 新增 `run_fr_self_interpreter_result` 测试 helper，用来读取 FR 自解释器返回的输出和错误列表。
+- 新增基础运行时错误诊断测试；测试先按预期失败，暴露 `runSelfHostedSourceResult` 尚未定义。
+- 扩展 `examples/fr_interpreter_helpers.fr`，新增 `errors` 列表、`runSelfHostedSourceResult`、`runSelfHostedProgramResult` 和 `addSelfRuntimeError`。
+- 给变量读取、函数调用和 await 增加基础错误记录，让缺失变量、非法调用和非法 await 能进入 `errors` 列表。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_self_interpreter_reports_basic_runtime_errors`：1 个错误诊断测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：30 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：正常自举 demo 仍输出九个样例结果。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：107 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
 - 提交并推送阶段 24.7：`e027ead Add self-hosted future support`。
 - 开始阶段 25.1：新增 `examples/fr_parser_builtins_sample.fr.txt`，覆盖目标程序调用 `len`、`push`、`pop`、`hasKey`、`type`、`str`、`number`、`substring`、`charAt` 和 `isAlphaNumeric`。
 - 新增 FR Parser 内置函数调用对照测试和自解释器内置函数桥接端到端测试；新增测试先按预期失败，暴露目标程序里的内置函数名在自解释器环境中未定义。
