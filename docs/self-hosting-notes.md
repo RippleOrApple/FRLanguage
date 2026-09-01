@@ -13,6 +13,7 @@ FR 现在已经具备一批写 Lexer demo 需要的基础能力：
 - `substring`：截取词素。
 - `isDigit` / `isAlpha` / `isAlphaNumeric`：判断字符类别。
 - `codePoint`：识别换行、制表符和双引号这类不方便直接写进字符串的字符。
+- `hasKey`：安全判断 Map 是否包含某个 key，用来实现 FR 自解释器的环境链查找。
 - `push`：向 Token 列表追加元素。
 - `readFile`：读取源码文本。
 - `import`：把工具函数拆到单独 `.fr` 文件。
@@ -48,6 +49,7 @@ examples/fr_parser_basic_sample.fr.txt
 examples/fr_parser_collections_sample.fr.txt
 examples/fr_parser_control_flow_sample.fr.txt
 examples/fr_parser_function_sample.fr.txt
+examples/fr_parser_scope_sample.fr.txt
 ```
 
 它读取并扫描这段源码：
@@ -79,7 +81,7 @@ Python 写的 FR 解释器
   -> 输出和 Python 原生链路一致
 ```
 
-这个闭环暂时覆盖变量声明、`print`、字面量、变量读取、括号、一元表达式、基础二元表达式、List/Map 字面量、索引读取、变量赋值、索引赋值、`if`、`while`、block、函数声明、函数调用、递归和 `return`。
+这个闭环暂时覆盖变量声明、`print`、字面量、变量读取、括号、一元表达式、基础二元表达式、List/Map 字面量、索引读取、变量赋值、索引赋值、`if`、`while`、block 局部作用域、函数声明、函数调用、闭包读取、跨函数全局调用、递归和 `return`。
 
 ## 这个 demo 的限制
 
@@ -87,7 +89,7 @@ Python 写的 FR 解释器
 - 字符串扫描已经支持少量常用转义，但还没有 Unicode 转义、十六进制转义等扩展形式。
 - 错误处理先用 `ERROR` Token 表达，还没有停止扫描或汇总诊断。
 - FR Parser 子集还没有覆盖 `future` 和 `await`。
-- FR 解释器子集还没有覆盖独立 block 作用域、闭包、跨函数全局变量读取、Future 和运行时错误诊断。
+- FR 解释器子集还没有覆盖 Future、完整原生函数桥接和运行时错误诊断。
 - 模块系统还没有命名空间和导出控制。
 
 ## 下一步建议
@@ -96,7 +98,7 @@ Python 写的 FR 解释器
 
 - 模块命名空间和导出控制：避免导入文件里的名字全部进入当前环境。
 - 评估 Future 是否进入自举子集：先判断它对 FR 工具链自举是否必要。
-- 扩展 FR 解释器子集：补闭包或全局变量读取，让函数之间能更自然地互相调用。
+- 扩展 FR 解释器子集：补更完整的运行时错误、内置函数调用桥接和逻辑短路表达式。
 - 更完整的 FR Lexer：继续补齐错误场景、错误汇总或更多字面量形式。
 
 这些能力完成后，可以把当前 helper 文件整理成更正式的 FR 工具链目录。

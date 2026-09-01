@@ -1,0 +1,18 @@
+let base = 10;
+let x = "outer";
+
+fn addBase(value) {
+  return value + base;
+}
+
+fn addOne(value) {
+  return addBase(value) + 1;
+}
+
+{
+  let x = "inner";
+  print(x);
+}
+
+print(x);
+print(addOne(4));

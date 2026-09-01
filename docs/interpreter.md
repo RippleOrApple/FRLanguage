@@ -275,6 +275,14 @@ print(user);
 
 Map key 当前支持字符串、数字和布尔值。读取不存在的 key 会报运行时错误。
 
+可以用 `hasKey(map, key)` 在读取前判断 key 是否存在：
+
+```fr
+let user = {"name": "FR"};
+print(hasKey(user, "name"));
+print(hasKey(user, "missing"));
+```
+
 ## 内置函数模型
 
 解释器启动时会把原生函数定义到全局环境中。它们和用户写的函数一样通过调用表达式执行，但函数体由 Python 实现。
@@ -291,6 +299,7 @@ Map key 当前支持字符串、数字和布尔值。读取不存在的 key 会�
 - `type(value)`：返回 `nil`、`bool`、`number`、`string`、`list`、`map`、`function` 或 `future`。
 - `str(value)`：把值转换成字符串。
 - `number(value)`：把数字字符串转换成数字。
+- `hasKey(map, key)`：判断 Map 是否包含指定 key。
 - `push(list, value)`：把值追加到 List 末尾，并返回追加后的长度。
 - `pop(list)`：移除并返回 List 末尾的值。
 - `readFile(path)`：读取 UTF-8 文本文件。

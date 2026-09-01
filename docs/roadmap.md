@@ -103,6 +103,7 @@ print(user["name"]);
 - `str(value)`
 - `number(value)`
 - `type(value)`
+- `hasKey(map, key)`
 - `substring(text, start, end)`
 - `charAt(text, index)`
 - `isDigit(ch)`
@@ -328,7 +329,7 @@ fr_lexer.fr
 - Python Lexer 和 FR Lexer 在测试样例上结果一致。
 - FR Parser 子集能输出结构化 AST Map，并和 Python Parser 子集对齐。
 - FR 解释器子集能运行小型 FR 程序，输出和 Python 实现一致。
-- FR Parser/Interpreter 子集应逐步扩展，当前已覆盖集合字面量、索引读写、控制流和函数，下一步重点是评估 Future 是否进入自举子集。
+- FR Parser/Interpreter 子集应逐步扩展，当前已覆盖集合字面量、索引读写、控制流、函数、block 局部作用域、闭包读取和跨函数全局调用，下一步重点是评估 Future 是否进入自举子集。
 - 对照测试应逐步覆盖基础源码、关键字、集合字面量、运算符和错误场景。
 - 在 FR 没有异常机制前，词法错误可以先用 `ERROR` Token 表达。
 
@@ -428,13 +429,11 @@ FR 源码
 建议下一步做：
 
 ```txt
-模块系统或 REPL
+自举 Future 评估或运行时错误诊断
 ```
 
 原因：
 
-- List 和 Map 已经完成，可以表达 Token 列表、配置和结构化数据。
-- 字符串内置函数和最小文件读取已经完成，下一步需要组织多文件代码，或者提升交互学习体验。
-- 模块系统更偏自举路线，REPL 更偏学习体验。
-
-模块系统完成后，项目就能开始写更像样的 FR 工具链 demo。
+- FR Lexer、Parser 子集和 Interpreter 子集已经打通最小自举闭环。
+- 当前自解释器已经具备环境链和函数闭包读取，下一块会开始触及 Future 或更严肃的错误传播。
+- 这两者都会影响后续能否把更多工具链逻辑搬到 FR 里。

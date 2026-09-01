@@ -440,6 +440,20 @@ class InterpreterTest(unittest.TestCase):
 
         self.assertEqual(interpreter.output, ["5", "3", "2"])
 
+    def test_builtin_has_key_checks_map_membership(self) -> None:
+        """验证 hasKey 能判断 Map 是否包含指定 key。"""
+        interpreter = self.run_source(
+            """
+            let values = {"name": "FR", 1: "one"};
+            print(hasKey(values, "name"));
+            print(hasKey(values, "missing"));
+            print(hasKey(values, 1));
+            print(hasKey(values, true));
+            """
+        )
+
+        self.assertEqual(interpreter.output, ["true", "false", "true", "false"])
+
     def test_builtin_string_helpers_read_text_parts(self) -> None:
         """验证字符串截取类内置函数能读取字符和片段。"""
         interpreter = self.run_source(
@@ -551,6 +565,12 @@ class InterpreterTest(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "codePoint 参数必须是单字符字符串"):
             self.run_source('print(codePoint("AB"));')
+
+        with self.assertRaisesRegex(RuntimeError, "hasKey 第 1 个参数必须是 Map"):
+            self.run_source('print(hasKey("not map", "name"));')
+
+        with self.assertRaisesRegex(RuntimeError, "Map key 类型不支持"):
+            self.run_source('print(hasKey({"name": "FR"}, [1]));')
 
     def test_builtin_read_file_reads_relative_text_file(self) -> None:
         with TemporaryDirectory() as directory:

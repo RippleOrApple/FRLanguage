@@ -139,6 +139,7 @@ print(codePoint("A"));
 print(type([1, 2]));
 print(str(42) + "!");
 print(number("41") + 1);
+print(hasKey({"name": "FR"}, "name"));
 ```
 
 List 修改：

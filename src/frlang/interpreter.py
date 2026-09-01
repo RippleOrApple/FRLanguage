@@ -486,6 +486,7 @@ class Interpreter:
             FRNativeFunction("type", 1, Interpreter.native_type),
             FRNativeFunction("str", 1, Interpreter.native_str),
             FRNativeFunction("number", 1, Interpreter.native_number),
+            FRNativeFunction("hasKey", 2, Interpreter.native_has_key),
             FRNativeFunction("push", 2, Interpreter.native_push),
             FRNativeFunction("pop", 1, Interpreter.native_pop),
             FRNativeFunction("readFile", 1, Interpreter.native_read_file),
@@ -636,6 +637,22 @@ class Interpreter:
         if number.is_integer():
             return int(number)
         return number
+
+    @staticmethod
+    def native_has_key(
+        interpreter: "Interpreter",
+        arguments: list[Any],
+        token: Token,
+    ) -> bool:
+        """实现 `hasKey(map, key)`：判断 Map 是否包含指定 key。"""
+        target = arguments[0]
+        if not isinstance(target, dict):
+            interpreter.raise_runtime_error(token, "hasKey 第 1 个参数必须是 Map")
+
+        normalized_key = interpreter.build_map_key(arguments[1])
+        if normalized_key is None:
+            interpreter.raise_runtime_error(token, "Map key 类型不支持")
+        return normalized_key in target
 
     @staticmethod
     def native_push(interpreter: "Interpreter", arguments: list[Any], token: Token) -> int:

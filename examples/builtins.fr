@@ -17,6 +17,8 @@ print(items);
 
 let config = {"name": "FR", "version": number("1")};
 print(len(config));
+print(hasKey(config, "name"));
+print(hasKey(config, "missing"));
 print(str(config));
 
 let fileText = readFile("sample.txt");

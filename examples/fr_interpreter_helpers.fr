@@ -1,6 +1,47 @@
-// 创建自举解释器状态，保存变量环境和输出列表。
+// 创建一个自举环境节点，用 values 保存本层变量，用 enclosing 指向外层环境。
+fn createSelfEnv(enclosing) {
+  return {"values": {}, "enclosing": enclosing};
+}
+
+// 创建自举解释器状态，保存当前环境链和输出列表。
 fn createSelfInterpreter() {
-  return {"env": {}, "output": []};
+  return {"env": createSelfEnv(nil), "output": []};
+}
+
+// 在当前环境中定义变量，主要用于 let 和函数声明。
+fn defineSelfVariable(state, name, value) {
+  state["env"]["values"][name] = value;
+}
+
+// 从指定环境开始查找变量名所在的环境节点。
+fn findSelfEnv(env, name) {
+  if hasKey(env["values"], name) {
+    return env;
+  }
+  if env["enclosing"] != nil {
+    return findSelfEnv(env["enclosing"], name);
+  }
+  return nil;
+}
+
+// 沿着环境链读取变量；现阶段找不到时先返回 nil。
+fn getSelfVariable(state, name) {
+  let env = findSelfEnv(state["env"], name);
+  if env != nil {
+    return env["values"][name];
+  }
+  return nil;
+}
+
+// 沿着环境链给已有变量赋值；找不到时先写入当前环境。
+fn assignSelfVariable(state, name, value) {
+  let env = findSelfEnv(state["env"], name);
+  if env != nil {
+    env["values"][name] = value;
+    return value;
+  }
+  defineSelfVariable(state, name, value);
+  return value;
 }
 
 // 运行一段源码：先用 FR Parser 解析，再执行 AST。
@@ -66,12 +107,13 @@ fn executeStatement(state, statement) {
 
 // 执行函数声明，把函数对象保存到当前环境中。
 fn executeSelfFunctionStmt(state, statement) {
-  state["env"][statement["name"]] = {
+  defineSelfVariable(state, statement["name"], {
     "type": "SelfFunction",
     "name": statement["name"],
     "params": statement["params"],
-    "body": statement["body"]
-  };
+    "body": statement["body"],
+    "closure": state["env"]
+  });
 }
 
 // 执行 return 语句，用信号 Map 把返回值传给调用方。
@@ -85,7 +127,11 @@ fn executeSelfReturnStmt(state, statement) {
 
 // 执行变量声明，把 initializer 的值保存到环境中。
 fn executeVarStmt(state, statement) {
-  state["env"][statement["name"]] = evaluateSelfExpr(state, statement["initializer"]);
+  let value = nil;
+  if statement["initializer"] != nil {
+    value = evaluateSelfExpr(state, statement["initializer"]);
+  }
+  defineSelfVariable(state, statement["name"], value);
 }
 
 // 执行 print 语句，把字符串化后的值追加到输出列表。
@@ -94,17 +140,21 @@ fn executePrintStmt(state, statement) {
   push(state["output"], stringifySelfValue(value));
 }
 
-// 执行 block 中的语句；自举子集暂时复用同一个环境。
+// 在新的局部环境中执行 block，结束后恢复外层环境。
 fn executeSelfBlock(state, statement) {
+  let previousEnv = state["env"];
+  state["env"] = createSelfEnv(previousEnv);
   let statements = statement["statements"];
   let index = 0;
   while index < len(statements) {
     let signal = executeStatement(state, statements[index]);
     if signal != nil {
+      state["env"] = previousEnv;
       return signal;
     }
     index = index + 1;
   }
+  state["env"] = previousEnv;
   return nil;
 }
 
@@ -137,7 +187,7 @@ fn evaluateSelfExpr(state, expression) {
     return expression["value"];
   }
   if expressionType == "VariableExpr" {
-    return state["env"][expression["name"]];
+    return getSelfVariable(state, expression["name"]);
   }
   if expressionType == "AssignExpr" {
     return evaluateSelfAssignExpr(state, expression);
@@ -172,8 +222,7 @@ fn evaluateSelfExpr(state, expression) {
 // 计算变量赋值表达式，并把新值写回环境。
 fn evaluateSelfAssignExpr(state, expression) {
   let value = evaluateSelfExpr(state, expression["value"]);
-  state["env"][expression["name"]] = value;
-  return value;
+  return assignSelfVariable(state, expression["name"], value);
 }
 
 // 计算 List 字面量，按顺序求出每个元素值。
@@ -231,19 +280,17 @@ fn evaluateSelfCallExpr(state, expression) {
   return callSelfFunction(state, callee, arguments);
 }
 
-// 调用自举函数对象，使用参数局部环境执行函数体。
+// 调用自举函数对象，用声明时环境作为外层作用域创建参数局部环境。
 fn callSelfFunction(state, functionValue, arguments) {
   let previousEnv = state["env"];
-  let localEnv = {};
+  state["env"] = createSelfEnv(functionValue["closure"]);
   let params = functionValue["params"];
-  localEnv[functionValue["name"]] = functionValue;
   let index = 0;
   while index < len(params) {
-    localEnv[params[index]] = arguments[index];
+    defineSelfVariable(state, params[index], arguments[index]);
     index = index + 1;
   }
 
-  state["env"] = localEnv;
   let signal = executeSelfFunctionBody(state, functionValue["body"]);
   state["env"] = previousEnv;
 

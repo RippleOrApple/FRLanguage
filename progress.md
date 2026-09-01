@@ -115,3 +115,16 @@
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出 `[7, false]`、`[2, [1, 42, 3], FR, 42]`、`[14]` 和 `[7, yes, no, 120]`。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 开始阶段 24.4：新增 `examples/fr_parser_scope_sample.fr.txt`，覆盖 block 局部变量遮蔽、函数读取全局变量和跨函数调用。
+- 新增 `hasKey(map, key)` 内置函数及解释器测试，用于判断 Map 是否包含指定 key。
+- 新增 FR Parser 作用域样例对照测试和自解释器作用域端到端测试；自解释器测试先按预期失败，暴露函数体无法读取全局变量和函数的问题。
+- 扩展 `examples/fr_interpreter_helpers.fr`：用 `{"values": ..., "enclosing": ...}` 表达环境链，函数对象记录 `closure`，block 和函数调用创建局部环境。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_interpreter.InterpreterTest.test_builtin_has_key_checks_map_membership tests.test_interpreter.InterpreterTest.test_builtin_reports_argument_type_errors tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_scope_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_scope_program`：4 个测试通过。
+- 扩展 `examples/fr_self_host_demo.fr`，新增作用域样例输出 `[inner, outer, 15]`。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：21 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出基础、集合、控制流、函数和作用域五个自举样例结果。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/builtins.fr`：通过，并输出 `hasKey` 的 true/false 结果。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：98 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。

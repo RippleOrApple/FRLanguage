@@ -33,6 +33,7 @@ FRLanguage 是一个使用 Python 编写的教学型小语言项目。目标不�
 - Map：`{"name": "FR"}`
 - 内置函数：`len(value)`、`charAt(text, index)`、`substring(text, start, end)`、`isDigit(ch)`、`isAlpha(ch)`、`isAlphaNumeric(ch)`、`codePoint(ch)`
 - 类型和转换：`type(value)`、`str(value)`、`number(value)`
+- Map 辅助：`hasKey(map, key)`
 - List 修改：`push(list, value)`、`pop(list)`
 - 文件读取：`readFile("相对路径")`
 - 模块导入：`import "相对路径.fr";`
@@ -102,7 +103,7 @@ print(missing);
 - 没有类和对象系统
 - Runtime 是协作式任务队列，不是真正多线程或 IO 异步
 - `await` 当前通过 Runtime 队列运行 Future 任务，还没有完整的暂停和恢复调用栈模型
-- 自举工具链目前只覆盖子集：FR Parser/Interpreter 子集可运行变量、基础表达式、`print`、List/Map 字面量、索引读写、`if`、`while`、block、函数调用、递归和 `return`
+- 自举工具链目前只覆盖子集：FR Parser/Interpreter 子集可运行变量、基础表达式、`print`、List/Map 字面量、索引读写、`if`、`while`、block 局部作用域、函数调用、闭包读取、跨函数全局调用、递归和 `return`
 
 ## 后续方向
 
