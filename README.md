@@ -74,6 +74,7 @@ $env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_demo.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/fr_lexer_error_demo.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/fr_bootstrap_suite.fr
+$env:PYTHONPATH='src'; python -m frlang.main examples/fr_bootstrap_acceptance.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/function.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/recursion.fr
 $env:PYTHONPATH='src'; python -m frlang.main examples/future.fr

@@ -22,3 +22,143 @@ fn runBootstrapSuite(paths) {
   }
   return results;
 }
+
+// 从错误对象列表中提取 message，便于和期望错误做结构化对照。
+fn bootstrapErrorMessages(errors) {
+  let messages = [];
+  let index = 0;
+  while index < len(errors) {
+    push(messages, errors[index]["message"]);
+    index = index + 1;
+  }
+  return messages;
+}
+
+// 运行一个带 expected 的自举用例，并判断输出和错误是否匹配。
+fn runBootstrapExpectation(expectation) {
+  let result = runBootstrapCase(expectation["path"]);
+  let errorMessages = bootstrapErrorMessages(result["errors"]);
+  let outputPassed = result["output"] == expectation["output"];
+  let errorsPassed = errorMessages == expectation["errors"];
+  return {
+    "path": expectation["path"],
+    "passed": outputPassed and errorsPassed,
+    "output": result["output"],
+    "errors": errorMessages,
+    "expected_output": expectation["output"],
+    "expected_errors": expectation["errors"]
+  };
+}
+
+// 运行一组带 expected 的自举用例，并返回总结果和每个用例结果。
+fn runBootstrapExpectations(expectations) {
+  let cases = [];
+  let passed = true;
+  let passedCount = 0;
+  let failedCount = 0;
+  let index = 0;
+  while index < len(expectations) {
+    let result = runBootstrapExpectation(expectations[index]);
+    if !result["passed"] {
+      passed = false;
+      failedCount = failedCount + 1;
+    } else {
+      passedCount = passedCount + 1;
+    }
+    push(cases, result);
+    index = index + 1;
+  }
+  return {
+    "passed": passed,
+    "case_count": len(cases),
+    "passed_count": passedCount,
+    "failed_count": failedCount,
+    "cases": cases
+  };
+}
+
+// 返回默认自举验收用例，覆盖正常路径和基础错误路径。
+fn defaultBootstrapExpectations() {
+  return [
+    {
+      "path": "fr_parser_basic_sample.fr.txt",
+      "output": ["7", "false"],
+      "errors": []
+    },
+    {
+      "path": "fr_parser_collections_sample.fr.txt",
+      "output": ["2", "[1, 42, 3]", "FR", "42"],
+      "errors": []
+    },
+    {
+      "path": "fr_parser_control_flow_sample.fr.txt",
+      "output": ["14"],
+      "errors": []
+    },
+    {
+      "path": "fr_parser_function_sample.fr.txt",
+      "output": ["7", "yes", "no", "120"],
+      "errors": []
+    },
+    {
+      "path": "fr_parser_scope_sample.fr.txt",
+      "output": ["inner", "outer", "15"],
+      "errors": []
+    },
+    {
+      "path": "fr_parser_logic_sample.fr.txt",
+      "output": ["true", "0", "false", "0", "fallback", "done", "2"],
+      "errors": []
+    },
+    {
+      "path": "fr_parser_break_sample.fr.txt",
+      "output": ["4", "6", "2"],
+      "errors": []
+    },
+    {
+      "path": "fr_parser_future_sample.fr.txt",
+      "output": ["0", "41", "1", "41"],
+      "errors": []
+    },
+    {
+      "path": "fr_parser_builtins_sample.fr.txt",
+      "output": ["2", "3", "[1, 2, 3]", "3", "[1, 2]", "true", "false", "map", "42!", "FR", "R", "true"],
+      "errors": []
+    },
+    {
+      "path": "fr_parser_import_sample.fr.txt",
+      "output": ["1", "5"],
+      "errors": []
+    },
+    {
+      "path": "fr_parser_error_sample.fr.txt",
+      "output": ["nil", "nil", "nil"],
+      "errors": ["变量 missing 未定义", "只能调用函数", "await 只能用于 Future"]
+    },
+    {
+      "path": "fr_parser_top_level_return_error_sample.fr.txt",
+      "output": [],
+      "errors": ["return 只能用于函数"]
+    },
+    {
+      "path": "fr_parser_top_level_break_error_sample.fr.txt",
+      "output": [],
+      "errors": ["break 只能用于 while 循环"]
+    },
+    {
+      "path": "fr_parser_function_break_error_sample.fr.txt",
+      "output": [],
+      "errors": ["break 只能用于 while 循环"]
+    },
+    {
+      "path": "fr_parser_future_break_error_sample.fr.txt",
+      "output": ["nil"],
+      "errors": ["break 只能用于 while 循环"]
+    }
+  ];
+}
+
+// 运行默认自举验收用例，并返回总结果。
+fn runDefaultBootstrapExpectations() {
+  return runBootstrapExpectations(defaultBootstrapExpectations());
+}

@@ -34,6 +34,7 @@ examples/fr_lexer_demo.fr
 examples/fr_lexer_error_demo.fr
 examples/fr_self_host_demo.fr
 examples/fr_bootstrap_suite.fr
+examples/fr_bootstrap_acceptance.fr
 examples/toolchain/lexer.fr
 examples/toolchain/parser.fr
 examples/toolchain/interpreter.fr
@@ -88,16 +89,24 @@ if name == "FR" {
 
 当前测试已经会把 FR Lexer 的输出和 Python Lexer 的输出做结构化对照，覆盖基础源码、更多符号、关键字样例、`nil` 样例、转义字符串样例和基础错误样例。
 
-当前也已经有第一条最小自举闭环：
+当前也已经有一条可验证的最小自举闭环：
 
 ```txt
 Python 写的 FR 解释器
   -> 运行 FR 写的 Lexer / Parser 子集 / Interpreter 子集
-  -> 处理 examples/fr_parser_basic_sample.fr.txt
-  -> 输出和 Python 原生链路一致
+  -> 处理多组 examples/fr_parser_*.fr.txt 目标程序
+  -> 由 examples/toolchain/bootstrap.fr 对照 expected 输出和错误
 ```
 
 这个闭环暂时覆盖变量声明、`print`、目标程序 `import`、字面量、变量读取、括号、一元表达式、基础二元表达式、`and/or` 短路逻辑、List/Map 字面量、索引读取、变量赋值、索引赋值、`if`、`while`、`break`、block 局部作用域、函数声明、函数调用、常用内置函数桥接、闭包读取、跨函数全局调用、递归、`return`、最小 `future/await`、基础运行时错误诊断和非法控制流诊断。
+
+`examples/fr_bootstrap_acceptance.fr` 会调用 `runDefaultBootstrapExpectations()`，默认运行 15 个自举验收用例，并返回：
+
+- `passed`：整体验收是否通过。
+- `case_count`：验收用例数量。
+- `passed_count`：通过数量。
+- `failed_count`：失败数量。
+- `cases`：每个目标程序的实际输出、实际错误和期望值。
 
 ## 这个 demo 的限制
 

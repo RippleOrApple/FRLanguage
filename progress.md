@@ -132,6 +132,18 @@
 - 新增 `examples/fr_bootstrap_suite.fr`，通过命令行展示 bootstrap suite 的结构化结果。
 - 新增 bootstrap suite 测试，确认 FR 写的 suite 能运行基础、import 和 Future 三组目标程序，并返回路径、输出和错误列表。
 - 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_bootstrap_suite_runs_multiple_programs tests.test_examples.ExampleTest.test_fr_bootstrap_suite_example_runs`：2 个 bootstrap 测试通过。
+- 扩展 `examples/toolchain/bootstrap.fr`，新增 `bootstrapErrorMessages`、`runBootstrapExpectation`、`runBootstrapExpectations`、`defaultBootstrapExpectations` 和 `runDefaultBootstrapExpectations`。
+- 新增 `examples/fr_bootstrap_acceptance.fr`，用 FR 默认验收集合运行 15 个目标程序并打印 `passed`、`case_count`、`passed_count`、`failed_count` 和每个 case 的实际/期望结果。
+- 新增 bootstrap expected 测试，确认默认验收集合覆盖 10 个正常路径和 5 个错误路径，且由 FR 计算出 15 个全部通过、0 个失败。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_bootstrap_expectations_report_passed_cases tests.test_examples.ExampleTest.test_fr_bootstrap_acceptance_example_runs`：2 个 bootstrap expected 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：41 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_bootstrap_acceptance.fr`：输出 `passed: true`、`case_count: 15`、`passed_count: 15`、`failed_count: 0`。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_bootstrap_suite.fr`：输出三组结构化自举验证结果。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出十个自举样例结果。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：118 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
 - 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：39 个 examples 测试通过。
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_bootstrap_suite.fr`：输出三组结构化自举验证结果。
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出十个自举样例结果。

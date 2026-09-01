@@ -129,6 +129,18 @@ class ExampleTest(unittest.TestCase):
         interpreter.interpret(program)
         return self.normalize_fr_value(interpreter.globals.values["actual"])
 
+    def run_fr_bootstrap_acceptance(self) -> dict[str, Any]:
+        """运行 FR 写的 bootstrap 验收入口，并返回总体验收结果。"""
+        program_source = """
+        import "toolchain/bootstrap.fr";
+        let actual = runDefaultBootstrapExpectations();
+        """
+        tokens = Lexer(program_source).scan_tokens()
+        program = Parser(tokens).parse()
+        interpreter = Interpreter(base_path=Path("examples"))
+        interpreter.interpret(program)
+        return self.normalize_fr_value(interpreter.globals.values["actual"])
+
     def python_program_output(self, source_path: str) -> list[str]:
         """运行 Python 实现的 FR 语言链路，并返回输出列表。"""
         source = Path("examples", source_path).read_text(encoding="utf-8")
@@ -755,6 +767,37 @@ class ExampleTest(unittest.TestCase):
         self.assertIn('"output": [7, false]', output)
         self.assertIn('"path": "fr_parser_import_sample.fr.txt"', output)
         self.assertIn('"output": [1, 5]', output)
+
+    def test_fr_bootstrap_expectations_report_passed_cases(self) -> None:
+        """验证 FR 写的 bootstrap 验收入口能判断 expected 是否匹配。"""
+        result = self.run_fr_bootstrap_acceptance()
+
+        self.assertTrue(result["passed"])
+        self.assertEqual(result["case_count"], 15)
+        self.assertEqual(result["passed_count"], 15)
+        self.assertEqual(result["failed_count"], 0)
+        self.assertEqual(len(result["cases"]), 15)
+        self.assertTrue(all(case["passed"] for case in result["cases"]))
+        self.assertEqual(
+            result["cases"][10]["errors"],
+            ["变量 missing 未定义", "只能调用函数", "await 只能用于 Future"],
+        )
+        self.assertEqual(
+            result["cases"][14]["errors"],
+            ["break 只能用于 while 循环"],
+        )
+
+    def test_fr_bootstrap_acceptance_example_runs(self) -> None:
+        """验证 bootstrap 验收示例可以通过命令行运行。"""
+        output = self.run_example("examples/fr_bootstrap_acceptance.fr")
+
+        self.assertIn('"passed": true', output)
+        self.assertIn('"case_count": 15', output)
+        self.assertIn('"failed_count": 0', output)
+        self.assertIn('"path": "fr_parser_error_sample.fr.txt"', output)
+        self.assertIn("变量 missing 未定义", output)
+        self.assertIn("只能调用函数", output)
+        self.assertIn("await 只能用于 Future", output)
 
     def test_legacy_fr_toolchain_helper_imports_still_work(self) -> None:
         """验证旧 helper 文件仍会导入新的 toolchain 组件。"""

@@ -176,7 +176,7 @@ FR 写的工具链核心组件。
 - `lexer.fr`：用 FR 扫描源码并生成结构化 Token List。
 - `parser.fr`：用 FR 把 Token List 转成 AST Map。
 - `interpreter.fr`：用 FR 执行 AST Map，并返回输出和基础错误诊断。
-- `bootstrap.fr`：用 FR 组织多组自举样例运行，并返回结构化验证结果。
+- `bootstrap.fr`：用 FR 组织多组自举样例运行，支持 expected 对照，并返回通过数、失败数和结构化验证结果。
 - 支撑 `fr_self_host_demo.fr` 和 `tests/test_examples.py` 中的端到端自举对照。
 
 `examples/fr_lexer_helpers.fr`、`examples/fr_parser_helpers.fr` 和 `examples/fr_interpreter_helpers.fr` 目前保留为兼容入口，它们会导入 `toolchain/` 下的新文件。
