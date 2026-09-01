@@ -1,0 +1,335 @@
+// 创建自举解释器状态，保存变量环境和输出列表。
+fn createSelfInterpreter() {
+  return {"env": {}, "output": []};
+}
+
+// 运行一段源码：先用 FR Parser 解析，再执行 AST。
+fn runSelfHostedSource(source) {
+  let program = parseSource(source);
+  return runSelfHostedProgram(program);
+}
+
+// 运行 Program AST Map，并返回 print 收集到的输出。
+fn runSelfHostedProgram(program) {
+  let state = createSelfInterpreter();
+  executeProgram(state, program);
+  return state["output"];
+}
+
+// 依次执行 Program 中的每条语句。
+fn executeProgram(state, program) {
+  let statements = program["statements"];
+  let index = 0;
+  while index < len(statements) {
+    let signal = executeStatement(state, statements[index]);
+    if signal != nil {
+      return signal;
+    }
+    index = index + 1;
+  }
+  return nil;
+}
+
+// 根据语句类型分派到对应执行逻辑。
+fn executeStatement(state, statement) {
+  let statementType = statement["type"];
+  if statementType == "FunctionStmt" {
+    executeSelfFunctionStmt(state, statement);
+    return nil;
+  }
+  if statementType == "VarStmt" {
+    executeVarStmt(state, statement);
+    return nil;
+  }
+  if statementType == "ReturnStmt" {
+    return executeSelfReturnStmt(state, statement);
+  }
+  if statementType == "PrintStmt" {
+    executePrintStmt(state, statement);
+    return nil;
+  }
+  if statementType == "ExprStmt" {
+    evaluateSelfExpr(state, statement["expression"]);
+    return nil;
+  }
+  if statementType == "BlockStmt" {
+    return executeSelfBlock(state, statement);
+  }
+  if statementType == "IfStmt" {
+    return executeSelfIfStmt(state, statement);
+  }
+  if statementType == "WhileStmt" {
+    return executeSelfWhileStmt(state, statement);
+  }
+  return nil;
+}
+
+// 执行函数声明，把函数对象保存到当前环境中。
+fn executeSelfFunctionStmt(state, statement) {
+  state["env"][statement["name"]] = {
+    "type": "SelfFunction",
+    "name": statement["name"],
+    "params": statement["params"],
+    "body": statement["body"]
+  };
+}
+
+// 执行 return 语句，用信号 Map 把返回值传给调用方。
+fn executeSelfReturnStmt(state, statement) {
+  let value = nil;
+  if statement["value"] != nil {
+    value = evaluateSelfExpr(state, statement["value"]);
+  }
+  return {"type": "ReturnSignal", "value": value};
+}
+
+// 执行变量声明，把 initializer 的值保存到环境中。
+fn executeVarStmt(state, statement) {
+  state["env"][statement["name"]] = evaluateSelfExpr(state, statement["initializer"]);
+}
+
+// 执行 print 语句，把字符串化后的值追加到输出列表。
+fn executePrintStmt(state, statement) {
+  let value = evaluateSelfExpr(state, statement["expression"]);
+  push(state["output"], stringifySelfValue(value));
+}
+
+// 执行 block 中的语句；自举子集暂时复用同一个环境。
+fn executeSelfBlock(state, statement) {
+  let statements = statement["statements"];
+  let index = 0;
+  while index < len(statements) {
+    let signal = executeStatement(state, statements[index]);
+    if signal != nil {
+      return signal;
+    }
+    index = index + 1;
+  }
+  return nil;
+}
+
+// 执行 if 语句，根据条件真假选择分支。
+fn executeSelfIfStmt(state, statement) {
+  if isSelfTruthy(evaluateSelfExpr(state, statement["condition"])) {
+    return executeStatement(state, statement["then_branch"]);
+  }
+  if statement["else_branch"] != nil {
+    return executeStatement(state, statement["else_branch"]);
+  }
+  return nil;
+}
+
+// 执行 while 语句，条件为真时重复执行循环体。
+fn executeSelfWhileStmt(state, statement) {
+  while isSelfTruthy(evaluateSelfExpr(state, statement["condition"])) {
+    let signal = executeStatement(state, statement["body"]);
+    if signal != nil {
+      return signal;
+    }
+  }
+  return nil;
+}
+
+// 计算自举 AST 表达式，并返回运行时值。
+fn evaluateSelfExpr(state, expression) {
+  let expressionType = expression["type"];
+  if expressionType == "LiteralExpr" {
+    return expression["value"];
+  }
+  if expressionType == "VariableExpr" {
+    return state["env"][expression["name"]];
+  }
+  if expressionType == "AssignExpr" {
+    return evaluateSelfAssignExpr(state, expression);
+  }
+  if expressionType == "ListExpr" {
+    return evaluateSelfListExpr(state, expression);
+  }
+  if expressionType == "MapExpr" {
+    return evaluateSelfMapExpr(state, expression);
+  }
+  if expressionType == "IndexExpr" {
+    return evaluateSelfIndexExpr(state, expression);
+  }
+  if expressionType == "IndexAssignExpr" {
+    return evaluateSelfIndexAssignExpr(state, expression);
+  }
+  if expressionType == "CallExpr" {
+    return evaluateSelfCallExpr(state, expression);
+  }
+  if expressionType == "GroupingExpr" {
+    return evaluateSelfExpr(state, expression["expression"]);
+  }
+  if expressionType == "UnaryExpr" {
+    return evaluateSelfUnaryExpr(state, expression);
+  }
+  if expressionType == "BinaryExpr" {
+    return evaluateSelfBinaryExpr(state, expression);
+  }
+  return nil;
+}
+
+// 计算变量赋值表达式，并把新值写回环境。
+fn evaluateSelfAssignExpr(state, expression) {
+  let value = evaluateSelfExpr(state, expression["value"]);
+  state["env"][expression["name"]] = value;
+  return value;
+}
+
+// 计算 List 字面量，按顺序求出每个元素值。
+fn evaluateSelfListExpr(state, expression) {
+  let values = [];
+  let elements = expression["elements"];
+  let index = 0;
+  while index < len(elements) {
+    push(values, evaluateSelfExpr(state, elements[index]));
+    index = index + 1;
+  }
+  return values;
+}
+
+// 计算 Map 字面量，按顺序求出 key 和 value。
+fn evaluateSelfMapExpr(state, expression) {
+  let values = {};
+  let entries = expression["entries"];
+  let index = 0;
+  while index < len(entries) {
+    let entry = entries[index];
+    let key = evaluateSelfExpr(state, entry["key"]);
+    values[key] = evaluateSelfExpr(state, entry["value"]);
+    index = index + 1;
+  }
+  return values;
+}
+
+// 计算索引读取表达式，支持 List 和 Map 的宿主运行时行为。
+fn evaluateSelfIndexExpr(state, expression) {
+  let target = evaluateSelfExpr(state, expression["target"]);
+  let index = evaluateSelfExpr(state, expression["index"]);
+  return target[index];
+}
+
+// 计算索引赋值表达式，并返回写入的新值。
+fn evaluateSelfIndexAssignExpr(state, expression) {
+  let target = evaluateSelfExpr(state, expression["target"]);
+  let index = evaluateSelfExpr(state, expression["index"]);
+  let value = evaluateSelfExpr(state, expression["value"]);
+  target[index] = value;
+  return value;
+}
+
+// 计算函数调用表达式，先求出被调用者和参数值。
+fn evaluateSelfCallExpr(state, expression) {
+  let callee = evaluateSelfExpr(state, expression["callee"]);
+  let arguments = [];
+  let argumentExprs = expression["arguments"];
+  let index = 0;
+  while index < len(argumentExprs) {
+    push(arguments, evaluateSelfExpr(state, argumentExprs[index]));
+    index = index + 1;
+  }
+  return callSelfFunction(state, callee, arguments);
+}
+
+// 调用自举函数对象，使用参数局部环境执行函数体。
+fn callSelfFunction(state, functionValue, arguments) {
+  let previousEnv = state["env"];
+  let localEnv = {};
+  let params = functionValue["params"];
+  localEnv[functionValue["name"]] = functionValue;
+  let index = 0;
+  while index < len(params) {
+    localEnv[params[index]] = arguments[index];
+    index = index + 1;
+  }
+
+  state["env"] = localEnv;
+  let signal = executeSelfFunctionBody(state, functionValue["body"]);
+  state["env"] = previousEnv;
+
+  if signal != nil {
+    return signal["value"];
+  }
+  return nil;
+}
+
+// 执行函数体语句列表，遇到 return 信号立即停止。
+fn executeSelfFunctionBody(state, statements) {
+  let index = 0;
+  while index < len(statements) {
+    let signal = executeStatement(state, statements[index]);
+    if signal != nil {
+      return signal;
+    }
+    index = index + 1;
+  }
+  return nil;
+}
+
+// 计算一元表达式，目前支持 ! 和一元负号。
+fn evaluateSelfUnaryExpr(state, expression) {
+  let right = evaluateSelfExpr(state, expression["right"]);
+  let operator = expression["operator"];
+  if operator == "!" {
+    return !isSelfTruthy(right);
+  }
+  if operator == "-" {
+    return -right;
+  }
+  return nil;
+}
+
+// 计算二元表达式，目前覆盖基础算术、比较和相等判断。
+fn evaluateSelfBinaryExpr(state, expression) {
+  let left = evaluateSelfExpr(state, expression["left"]);
+  let right = evaluateSelfExpr(state, expression["right"]);
+  let operator = expression["operator"];
+
+  if operator == "+" {
+    return left + right;
+  }
+  if operator == "-" {
+    return left - right;
+  }
+  if operator == "*" {
+    return left * right;
+  }
+  if operator == "/" {
+    return left / right;
+  }
+  if operator == ">" {
+    return left > right;
+  }
+  if operator == ">=" {
+    return left >= right;
+  }
+  if operator == "<" {
+    return left < right;
+  }
+  if operator == "<=" {
+    return left <= right;
+  }
+  if operator == "==" {
+    return left == right;
+  }
+  if operator == "!=" {
+    return left != right;
+  }
+  return nil;
+}
+
+// 按 FR 的真假规则判断值是否为真。
+fn isSelfTruthy(value) {
+  if value == nil {
+    return false;
+  }
+  if value == false {
+    return false;
+  }
+  return true;
+}
+
+// 把自举解释器的运行时值转换成 print 输出文本。
+fn stringifySelfValue(value) {
+  return str(value);
+}

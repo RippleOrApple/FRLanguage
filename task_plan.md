@@ -2,7 +2,7 @@
 
 ## 目标
 
-补齐字符串内置函数、集合辅助函数和最小文件读取能力，让 FRLanguage 更适合后续编写 Lexer demo。
+持续推进 FRLanguage 的自举路线：先把 FR Lexer demo 演进为可复用工具链组件，再用 FR 实现 Parser 子集和解释器子集，最终形成可验证的最小自举闭环。
 
 ## 阶段
 
@@ -26,14 +26,27 @@
 - [x] 阶段 17：增加 FR Lexer 错误 Token 与 Python Lexer 错误信息的对照测试。
 - [x] 阶段 18：增加字符串转义支持，并让 Python Lexer、解释器和 FR Lexer demo 行为对齐。
 - [x] 阶段 19：增加显式 `nil` 字面量，并同步 Python 语言链路和 FR Lexer demo。
+- [x] 阶段 20：用 FR 实现简化 Parser，先支持 `let`、`print` 和基础表达式 AST。
+- [x] 阶段 21：让 FR Parser 子集与 Python Parser 在小型样例上做结构化对照。
+- [x] 阶段 22：用 FR 实现解释器子集，先运行字面量、变量、二元表达式和 `print`。
+- [x] 阶段 23：打通最小自举闭环：Python FR 解释器运行 FR 工具链，FR 工具链运行小型 FR 程序。
+- [ ] 阶段 24：逐步扩展 FR Parser/Interpreter，覆盖 `if`、`while`、函数和 Future。
+  - [x] 阶段 24.1：扩展 FR Parser/Interpreter 子集，支持 List/Map 字面量、索引读取、变量赋值和索引赋值。
+  - [x] 阶段 24.2：扩展 FR Parser/Interpreter 子集，支持 `if`、`while` 和 block。
+  - [x] 阶段 24.3：扩展 FR Parser/Interpreter 子集，支持函数声明、函数调用、递归和 `return`。
+  - [ ] 阶段 24.4：评估 Future 是否进入自举子集，避免过早复杂化。
 
 ## 决策
 
 - 内置函数作为全局变量注入解释器，不新增语法。
 - `readFile` 只接受相对路径，并限制在解释器 `base_path` 目录内。
 - 保留当前树遍历解释器结构，不拆大模块。
+- 自举先以结构化 Map/List 表达 Token 和 AST，不急着在 FR 里实现类或 dataclass。
+- FR Parser 第一版只覆盖最小子集，后续通过对照测试逐步扩展。
 
 ## 风险
 
 - 内置函数错误信息需要保持和现有运行时错误风格一致。
 - 文件读取测试要避免依赖本机绝对路径。
+- 自举目标很大，必须保持小步可验证；每一阶段都要能单独运行和测试。
+- FR 目前没有异常机制，FR 写的工具链先用 `ERROR` Map 或错误列表表达诊断。

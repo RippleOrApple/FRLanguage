@@ -66,3 +66,52 @@
 - FR Lexer demo 同步支持字符串转义，并新增转义字符串样例和未知转义错误样例的结构化对照测试。
 - 增加显式 `nil` 字面量：Lexer 会识别 `nil` 关键字，Parser 会生成 `LiteralExpr(None)`，解释器可直接输出和比较 `nil`。
 - FR Lexer demo 同步识别 `nil`，并新增 `examples/fr_lexer_nil_sample.fr.txt` 覆盖关键字 Token。
+
+## 2026-09-01
+
+- 用户将目标升级为“继续做下去，直到实现自举”。
+- 将 `GOAL.md` 从旧的短期内置函数目标更新为长期自举目标，明确最短路径为 FR Lexer -> FR Parser 子集 -> FR Interpreter 子集 -> 端到端自举对照。
+- 更新 `task_plan.md`，新增阶段 20 到阶段 24，要求每一步都保持可运行、可测试、可记录。
+- 新增 `examples/fr_parser_helpers.fr`，用 FR 实现 Parser 子集，能解析 `let`、`print`、表达式语句、字面量、变量、括号、一元表达式和基础二元表达式。
+- 新增 FR Parser 测试，确认 Parser 子集能把 `examples/fr_parser_basic_sample.fr.txt` 转换成 AST Map。
+- 新增 Python Parser AST 结构化转换测试，确认 FR Parser 子集和 Python Parser 在基础样例上对齐。
+- 新增 `examples/fr_interpreter_helpers.fr`，用 FR 实现解释器子集，能执行变量声明、`print` 和基础表达式。
+- 新增最小自举闭环测试：Python FR 解释器运行 FR 写的 Lexer、Parser 子集和解释器子集，输出与 Python 原生链路一致。
+- 新增 `examples/fr_self_host_demo.fr`，用于手动运行最小自举 demo。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_parser_parses_basic_program_ast tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_basic_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_basic_program`：3 个自举相关测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出 `[7, false]`。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：89 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 开始阶段 24.1：新增 `examples/fr_parser_collections_sample.fr.txt`，覆盖 List/Map 字面量、索引读取和索引赋值。
+- 新增 FR Parser 集合对照测试，先观察到 FR Parser 把集合相关表达式降成 `nil`，自解释器输出 `nil`。
+- 扩展 `examples/fr_parser_helpers.fr`，新增 `ListExpr`、`MapExpr`、`IndexExpr`、`AssignExpr` 和 `IndexAssignExpr` AST Map。
+- 扩展 `examples/fr_interpreter_helpers.fr`，新增集合求值、索引读取、变量赋值和索引赋值。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_collection_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_collection_program`：2 个集合自举测试通过。
+- 扩展 `examples/fr_self_host_demo.fr`，现在会同时运行基础样例和集合样例；命令输出为 `[7, false]` 和 `[2, [1, 42, 3], FR, 42]`。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：91 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出基础样例和集合样例结果。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 开始阶段 24.2：新增 `examples/fr_parser_control_flow_sample.fr.txt`，覆盖 `if`、`else`、`while` 和 block。
+- 新增 FR Parser 控制流对照测试和自解释器控制流端到端测试，先观察到 FR Parser 还无法把 `if/while` 解析成对应 AST。
+- 扩展 `examples/fr_parser_helpers.fr`，新增 `BlockStmt`、`IfStmt` 和 `WhileStmt` AST Map，以及 `parseBlock`、`parseIfStatement`、`parseWhileStatement`。
+- 扩展 `examples/fr_interpreter_helpers.fr`，新增 block、if 和 while 的执行逻辑；自举子集暂时复用同一个环境，不实现 block 局部作用域。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_control_flow_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_control_flow_program`：2 个控制流自举测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：93 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出 `[7, false]`、`[2, [1, 42, 3], FR, 42]` 和 `[14]`。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 开始阶段 24.3：新增 `examples/fr_parser_function_sample.fr.txt`，覆盖函数声明、参数、局部变量、函数调用、`return`、条件返回和递归。
+- 新增 FR Parser 函数对照测试和自解释器函数端到端测试，先观察到 FR Parser 还无法把 `fn/return/call` 解析成对应 AST。
+- 扩展 `examples/fr_parser_helpers.fr`，新增 `FunctionStmt`、`ReturnStmt` 和 `CallExpr` AST Map，以及函数声明、return 语句和调用参数解析。
+- 扩展 `examples/fr_interpreter_helpers.fr`，新增自举函数对象、调用局部环境、return 信号传递和函数体执行。
+- 递归样例先暴露出局部环境无法读取自身函数名的问题；随后给 `SelfFunction` 记录 `name`，并在调用时把函数自身绑定到局部环境。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_function_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_function_program`：2 个函数自举测试通过。
+- 扩展 `examples/fr_self_host_demo.fr`，现在会同时运行基础、集合、控制流和函数四个自举样例。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：95 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出 `[7, false]`、`[2, [1, 42, 3], FR, 42]`、`[14]` 和 `[7, yes, no, 120]`。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
