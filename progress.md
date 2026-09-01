@@ -82,3 +82,14 @@
 - 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出 `[7, false]`。
 - 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：89 个测试通过。
 - 运行 `python -m compileall src tests`：通过。
+- 开始阶段 24.1：新增 `examples/fr_parser_collections_sample.fr.txt`，覆盖 List/Map 字面量、索引读取和索引赋值。
+- 新增 FR Parser 集合对照测试，先观察到 FR Parser 把集合相关表达式降成 `nil`，自解释器输出 `nil`。
+- 扩展 `examples/fr_parser_helpers.fr`，新增 `ListExpr`、`MapExpr`、`IndexExpr`、`AssignExpr` 和 `IndexAssignExpr` AST Map。
+- 扩展 `examples/fr_interpreter_helpers.fr`，新增集合求值、索引读取、变量赋值和索引赋值。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_collection_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_collection_program`：2 个集合自举测试通过。
+- 扩展 `examples/fr_self_host_demo.fr`，现在会同时运行基础样例和集合样例；命令输出为 `[7, false]` 和 `[2, [1, 42, 3], FR, 42]`。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：91 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出基础样例和集合样例结果。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。

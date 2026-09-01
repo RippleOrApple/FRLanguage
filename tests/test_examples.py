@@ -5,11 +5,16 @@ from pathlib import Path
 from typing import Any
 
 from frlang.ast import (
+    AssignExpr,
     BinaryExpr,
     Expr,
     ExprStmt,
     GroupingExpr,
+    IndexAssignExpr,
+    IndexExpr,
+    ListExpr,
     LiteralExpr,
+    MapExpr,
     PrintStmt,
     Program,
     Stmt,
@@ -129,6 +134,44 @@ class ExampleTest(unittest.TestCase):
             return {"type": "LiteralExpr", "value": expression.value}
         if isinstance(expression, VariableExpr):
             return {"type": "VariableExpr", "name": expression.name.lexeme}
+        if isinstance(expression, AssignExpr):
+            return {
+                "type": "AssignExpr",
+                "name": expression.name.lexeme,
+                "value": self.normalize_python_expr(expression.value),
+            }
+        if isinstance(expression, IndexExpr):
+            return {
+                "type": "IndexExpr",
+                "target": self.normalize_python_expr(expression.target),
+                "index": self.normalize_python_expr(expression.index),
+            }
+        if isinstance(expression, IndexAssignExpr):
+            return {
+                "type": "IndexAssignExpr",
+                "target": self.normalize_python_expr(expression.target),
+                "index": self.normalize_python_expr(expression.index),
+                "value": self.normalize_python_expr(expression.value),
+            }
+        if isinstance(expression, ListExpr):
+            return {
+                "type": "ListExpr",
+                "elements": [
+                    self.normalize_python_expr(element)
+                    for element in expression.elements
+                ],
+            }
+        if isinstance(expression, MapExpr):
+            return {
+                "type": "MapExpr",
+                "entries": [
+                    {
+                        "key": self.normalize_python_expr(entry.key),
+                        "value": self.normalize_python_expr(entry.value),
+                    }
+                    for entry in expression.entries
+                ],
+            }
         if isinstance(expression, GroupingExpr):
             return {
                 "type": "GroupingExpr",
@@ -399,6 +442,24 @@ class ExampleTest(unittest.TestCase):
     def test_fr_self_interpreter_runs_basic_program(self) -> None:
         """验证 FR 写的解释器子集能运行基础 FR 程序。"""
         source_path = "fr_parser_basic_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_self_interpreter(source_path),
+            self.python_program_output(source_path),
+        )
+
+    def test_fr_parser_matches_python_parser_for_collection_program(self) -> None:
+        """验证 FR Parser 子集能解析集合、索引和赋值 AST。"""
+        source_path = "fr_parser_collections_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_parser(source_path),
+            self.python_parser_ast(source_path),
+        )
+
+    def test_fr_self_interpreter_runs_collection_program(self) -> None:
+        """验证 FR 写的解释器子集能运行集合和索引程序。"""
+        source_path = "fr_parser_collections_sample.fr.txt"
 
         self.assertEqual(
             self.run_fr_self_interpreter(source_path),

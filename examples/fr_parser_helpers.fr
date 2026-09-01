@@ -87,6 +87,36 @@ fn binaryExpr(left, operator, right) {
   return {"type": "BinaryExpr", "left": left, "operator": operator, "right": right};
 }
 
+// 创建 List 字面量表达式 AST Map。
+fn listExpr(elements) {
+  return {"type": "ListExpr", "elements": elements};
+}
+
+// 创建 Map 字面量表达式 AST Map。
+fn mapExpr(entries) {
+  return {"type": "MapExpr", "entries": entries};
+}
+
+// 创建 Map 字面量中的一组 key/value AST Map。
+fn mapEntry(key, value) {
+  return {"key": key, "value": value};
+}
+
+// 创建索引读取表达式 AST Map。
+fn indexExpr(target, index) {
+  return {"type": "IndexExpr", "target": target, "index": index};
+}
+
+// 创建变量赋值表达式 AST Map。
+fn assignExpr(name, value) {
+  return {"type": "AssignExpr", "name": name, "value": value};
+}
+
+// 创建索引赋值表达式 AST Map。
+fn indexAssignExpr(target, index, value) {
+  return {"type": "IndexAssignExpr", "target": target, "index": index, "value": value};
+}
+
 // 创建变量声明语句 AST Map。
 fn varStmt(name, initializer) {
   return {"type": "VarStmt", "name": name, "initializer": initializer};
@@ -160,9 +190,25 @@ fn parseExpressionStatement(parser) {
   return exprStmt(expression);
 }
 
-// 表达式入口，目前从相等比较开始。
+// 表达式入口，先解析赋值，再逐层处理更高优先级表达式。
 fn parseExpression(parser) {
-  return parseEquality(parser);
+  return parseAssignment(parser);
+}
+
+// 解析变量赋值和索引赋值表达式。
+fn parseAssignment(parser) {
+  let expression = parseEquality(parser);
+  if matchType(parser, "EQUAL") {
+    let value = parseAssignment(parser);
+    if expression["type"] == "VariableExpr" {
+      return assignExpr(expression["name"], value);
+    }
+    if expression["type"] == "IndexExpr" {
+      return indexAssignExpr(expression["target"], expression["index"], value);
+    }
+    addParserError(parser, previousToken(parser), "无效的赋值目标");
+  }
+  return expression;
 }
 
 // 解析 == 和 != 表达式。
@@ -216,10 +262,21 @@ fn parseUnary(parser) {
     let right = parseUnary(parser);
     return unaryExpr(operator["lexeme"], right);
   }
-  return parsePrimary(parser);
+  return parsePostfix(parser);
 }
 
-// 解析字面量、变量和括号表达式。
+// 解析索引读取后缀，例如 items[0]。
+fn parsePostfix(parser) {
+  let expression = parsePrimary(parser);
+  while matchType(parser, "LEFT_BRACKET") {
+    let index = parseExpression(parser);
+    consumeType(parser, "RIGHT_BRACKET", "索引表达式缺少 ']'");
+    expression = indexExpr(expression, index);
+  }
+  return expression;
+}
+
+// 解析字面量、变量、集合字面量和括号表达式。
 fn parsePrimary(parser) {
   if matchType(parser, "FALSE") {
     return literalExpr(false);
@@ -239,6 +296,12 @@ fn parsePrimary(parser) {
   if matchType(parser, "IDENTIFIER") {
     return variableExpr(previousToken(parser)["lexeme"]);
   }
+  if matchType(parser, "LEFT_BRACKET") {
+    return parseListLiteral(parser);
+  }
+  if matchType(parser, "LEFT_BRACE") {
+    return parseMapLiteral(parser);
+  }
   if matchType(parser, "LEFT_PAREN") {
     let expression = parseExpression(parser);
     consumeType(parser, "RIGHT_PAREN", "括号表达式缺少 ')'");
@@ -251,4 +314,37 @@ fn parsePrimary(parser) {
     advanceToken(parser);
   }
   return literalExpr(nil);
+}
+
+// 解析 List 字面量中的元素列表。
+fn parseListLiteral(parser) {
+  let elements = [];
+  if !checkType(parser, "RIGHT_BRACKET") {
+    while true {
+      push(elements, parseExpression(parser));
+      if !matchType(parser, "COMMA") {
+        break;
+      }
+    }
+  }
+  consumeType(parser, "RIGHT_BRACKET", "列表字面量缺少 ']'");
+  return listExpr(elements);
+}
+
+// 解析 Map 字面量中的 key/value 项。
+fn parseMapLiteral(parser) {
+  let entries = [];
+  if !checkType(parser, "RIGHT_BRACE") {
+    while true {
+      let key = parseExpression(parser);
+      consumeType(parser, "COLON", "Map key 后需要 ':'");
+      let value = parseExpression(parser);
+      push(entries, mapEntry(key, value));
+      if !matchType(parser, "COMMA") {
+        break;
+      }
+    }
+  }
+  consumeType(parser, "RIGHT_BRACE", "Map 字面量缺少 '}'");
+  return mapExpr(entries);
 }

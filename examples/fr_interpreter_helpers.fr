@@ -64,6 +64,21 @@ fn evaluateSelfExpr(state, expression) {
   if expressionType == "VariableExpr" {
     return state["env"][expression["name"]];
   }
+  if expressionType == "AssignExpr" {
+    return evaluateSelfAssignExpr(state, expression);
+  }
+  if expressionType == "ListExpr" {
+    return evaluateSelfListExpr(state, expression);
+  }
+  if expressionType == "MapExpr" {
+    return evaluateSelfMapExpr(state, expression);
+  }
+  if expressionType == "IndexExpr" {
+    return evaluateSelfIndexExpr(state, expression);
+  }
+  if expressionType == "IndexAssignExpr" {
+    return evaluateSelfIndexAssignExpr(state, expression);
+  }
   if expressionType == "GroupingExpr" {
     return evaluateSelfExpr(state, expression["expression"]);
   }
@@ -74,6 +89,55 @@ fn evaluateSelfExpr(state, expression) {
     return evaluateSelfBinaryExpr(state, expression);
   }
   return nil;
+}
+
+// 计算变量赋值表达式，并把新值写回环境。
+fn evaluateSelfAssignExpr(state, expression) {
+  let value = evaluateSelfExpr(state, expression["value"]);
+  state["env"][expression["name"]] = value;
+  return value;
+}
+
+// 计算 List 字面量，按顺序求出每个元素值。
+fn evaluateSelfListExpr(state, expression) {
+  let values = [];
+  let elements = expression["elements"];
+  let index = 0;
+  while index < len(elements) {
+    push(values, evaluateSelfExpr(state, elements[index]));
+    index = index + 1;
+  }
+  return values;
+}
+
+// 计算 Map 字面量，按顺序求出 key 和 value。
+fn evaluateSelfMapExpr(state, expression) {
+  let values = {};
+  let entries = expression["entries"];
+  let index = 0;
+  while index < len(entries) {
+    let entry = entries[index];
+    let key = evaluateSelfExpr(state, entry["key"]);
+    values[key] = evaluateSelfExpr(state, entry["value"]);
+    index = index + 1;
+  }
+  return values;
+}
+
+// 计算索引读取表达式，支持 List 和 Map 的宿主运行时行为。
+fn evaluateSelfIndexExpr(state, expression) {
+  let target = evaluateSelfExpr(state, expression["target"]);
+  let index = evaluateSelfExpr(state, expression["index"]);
+  return target[index];
+}
+
+// 计算索引赋值表达式，并返回写入的新值。
+fn evaluateSelfIndexAssignExpr(state, expression) {
+  let target = evaluateSelfExpr(state, expression["target"]);
+  let index = evaluateSelfExpr(state, expression["index"]);
+  let value = evaluateSelfExpr(state, expression["value"]);
+  target[index] = value;
+  return value;
 }
 
 // 计算一元表达式，目前支持 ! 和一元负号。

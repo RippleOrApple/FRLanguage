@@ -1,0 +1,7 @@
+let items = [1, 2, 3];
+print(items[1]);
+items[1] = 42;
+print(items);
+let table = {"name": "FR", "count": items[1]};
+print(table["name"]);
+print(table["count"]);
