@@ -1,0 +1,5 @@
+hits = hits + 1;
+
+fn importedAdd(value) {
+  return value + hits;
+}

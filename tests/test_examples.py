@@ -17,6 +17,7 @@ from frlang.ast import (
     FutureExpr,
     GroupingExpr,
     IfStmt,
+    ImportStmt,
     IndexAssignExpr,
     IndexExpr,
     ListExpr,
@@ -152,6 +153,11 @@ class ExampleTest(unittest.TestCase):
                 "type": "VarStmt",
                 "name": statement.name.lexeme,
                 "initializer": initializer,
+            }
+        if isinstance(statement, ImportStmt):
+            return {
+                "type": "ImportStmt",
+                "path": statement.path.literal,
             }
         if isinstance(statement, PrintStmt):
             return {
@@ -686,6 +692,24 @@ class ExampleTest(unittest.TestCase):
     def test_fr_self_interpreter_runs_builtins_program(self) -> None:
         """验证 FR 写的解释器子集能桥接常用内置函数。"""
         source_path = "fr_parser_builtins_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_self_interpreter(source_path),
+            self.python_program_output(source_path),
+        )
+
+    def test_fr_parser_matches_python_parser_for_import_program(self) -> None:
+        """验证 FR Parser 子集能解析 import 语句 AST。"""
+        source_path = "fr_parser_import_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_parser(source_path),
+            self.python_parser_ast(source_path),
+        )
+
+    def test_fr_self_interpreter_runs_import_program(self) -> None:
+        """验证 FR 写的解释器子集能执行并缓存 import。"""
+        source_path = "fr_parser_import_sample.fr.txt"
 
         self.assertEqual(
             self.run_fr_self_interpreter(source_path),

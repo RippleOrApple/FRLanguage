@@ -132,6 +132,11 @@ fn varStmt(name, initializer) {
   return {"type": "VarStmt", "name": name, "initializer": initializer};
 }
 
+// 创建 import 语句 AST Map。
+fn importStmt(path) {
+  return {"type": "ImportStmt", "path": path};
+}
+
 // 创建 print 语句 AST Map。
 fn printStmt(expression) {
   return {"type": "PrintStmt", "expression": expression};
@@ -197,8 +202,11 @@ fn parseTokens(tokens) {
   return {"type": "Program", "statements": statements, "errors": parser["errors"]};
 }
 
-// 解析声明级语法，支持函数声明和变量声明。
+// 解析声明级语法，支持 import、函数声明和变量声明。
 fn parseDeclaration(parser) {
+  if matchType(parser, "IMPORT") {
+    return parseImportDeclaration(parser);
+  }
   if matchType(parser, "FN") {
     return parseFunctionDeclaration(parser);
   }
@@ -206,6 +214,13 @@ fn parseDeclaration(parser) {
     return parseVarDeclaration(parser);
   }
   return parseStatement(parser);
+}
+
+// 解析 import 声明：import "path.fr";
+fn parseImportDeclaration(parser) {
+  let path = consumeType(parser, "STRING", "import 后需要字符串路径");
+  consumeType(parser, "SEMICOLON", "import 语句末尾需要 ';'");
+  return importStmt(path["literal"]);
 }
 
 // 解析函数声明：fn name(param, ...) { ... }

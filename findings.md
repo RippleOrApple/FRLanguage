@@ -51,6 +51,8 @@
 - 由于当前 `import` 禁止从子目录逃逸到父目录，兼容入口应放在 `examples/` 根目录向下导入 `toolchain/`，而不是在 `toolchain/` 内向上导入旧 helper。
 - 自举解释器可以用 `reportUnhandledSelfSignal` 统一处理跑出合法边界的控制流信号：程序入口负责顶层 `return/break`，函数和 Future 边界负责未被 while 消费的 `break`。
 - 当前错误策略仍是“记录后继续/返回 nil”，尚未完全复刻 Python 解释器遇到运行时错误即停止执行的行为。
+- FR Parser 子集支持 `ImportStmt` 后，目标程序就能拆成多个文件；这比只在宿主测试脚本中 import 工具链更接近真实自举项目形态。
+- 自举解释器的 import 缓存使用路径字符串即可覆盖当前 examples 下的重复导入样例；嵌套目录相对路径解析仍受限于宿主 `readFile` 的 base_path 模型。
 
 ## 路线判断
 

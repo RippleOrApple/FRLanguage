@@ -128,6 +128,19 @@
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 开始阶段 25.5：新增 `examples/fr_parser_import_sample.fr.txt` 和 `examples/fr_parser_import_helper_sample.fr.txt`，覆盖目标程序导入 helper、读取导入文件中的函数，以及重复导入缓存。
+- 更新 examples 测试的 Python AST 归一化逻辑，加入 `ImportStmt` 对照结构。
+- 新增 FR Parser import 对照测试和自解释器 import 端到端测试；新增测试先按预期失败，暴露 FR Parser 将 `import` 降为占位表达式，自解释器没有执行 helper 文件。
+- 扩展 `examples/toolchain/parser.fr`，新增 `ImportStmt` AST Map 和 `parseImportDeclaration`。
+- 扩展 `examples/toolchain/interpreter.fr`，新增 `imports` 缓存、`executeSelfImportStmt` 和 `appendSelfErrors`，导入文件通过 `readFile -> parseSource -> executeProgram` 执行。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_import_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_import_program`：2 个 import 自举测试通过。
+- 扩展 `examples/fr_self_host_demo.fr`，新增 import 样例输出 `[1, 5]`。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：37 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出十个自举样例结果。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：114 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
 - 开始阶段 25.3：新增顶层 `return`、顶层 `break`、函数裸 `break` 和 Future 裸 `break` 错误样例。
 - 新增四个自解释器错误诊断测试；前三个先按预期失败，暴露非法控制流信号会跑出边界但不会进入错误列表。
 - 扩展 `examples/toolchain/interpreter.fr`，新增 `reportUnhandledSelfSignal`，在程序入口、函数调用和 Future 执行边界把未处理的 `ReturnSignal` / `BreakSignal` 转成运行时错误诊断。

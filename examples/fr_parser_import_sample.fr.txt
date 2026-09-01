@@ -1,0 +1,7 @@
+let hits = 0;
+
+import "fr_parser_import_helper_sample.fr.txt";
+import "fr_parser_import_helper_sample.fr.txt";
+
+print(hits);
+print(importedAdd(4));

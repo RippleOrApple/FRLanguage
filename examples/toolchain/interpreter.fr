@@ -5,7 +5,7 @@ fn createSelfEnv(enclosing) {
 
 // 创建自举解释器状态，保存当前环境链和输出列表。
 fn createSelfInterpreter() {
-  let state = {"env": createSelfEnv(nil), "output": [], "errors": []};
+  let state = {"env": createSelfEnv(nil), "output": [], "errors": [], "imports": {}};
   defineSelfNativeFunctions(state);
   return state;
 }
@@ -138,6 +138,10 @@ fn executeStatement(state, statement) {
     executeSelfFunctionStmt(state, statement);
     return nil;
   }
+  if statementType == "ImportStmt" {
+    executeSelfImportStmt(state, statement);
+    return nil;
+  }
   if statementType == "VarStmt" {
     executeVarStmt(state, statement);
     return nil;
@@ -177,6 +181,28 @@ fn executeSelfFunctionStmt(state, statement) {
     "body": statement["body"],
     "closure": state["env"]
   });
+}
+
+// 执行 import 语句，读取并执行目标文件，同时避免重复导入。
+fn executeSelfImportStmt(state, statement) {
+  let path = statement["path"];
+  if hasKey(state["imports"], path) {
+    return nil;
+  }
+  state["imports"][path] = true;
+
+  let program = parseSource(readFile(path));
+  appendSelfErrors(state, program["errors"]);
+  return executeProgram(state, program);
+}
+
+// 把一组错误追加到当前自解释器错误列表中。
+fn appendSelfErrors(state, errors) {
+  let index = 0;
+  while index < len(errors) {
+    push(state["errors"], errors[index]);
+    index = index + 1;
+  }
 }
 
 // 执行 return 语句，用信号 Map 把返回值传给调用方。
