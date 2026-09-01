@@ -309,7 +309,7 @@ fn parseExpression(parser) {
 
 // 解析变量赋值和索引赋值表达式。
 fn parseAssignment(parser) {
-  let expression = parseEquality(parser);
+  let expression = parseOr(parser);
   if matchType(parser, "EQUAL") {
     let value = parseAssignment(parser);
     if expression["type"] == "VariableExpr" {
@@ -319,6 +319,28 @@ fn parseAssignment(parser) {
       return indexAssignExpr(expression["target"], expression["index"], value);
     }
     addParserError(parser, previousToken(parser), "无效的赋值目标");
+  }
+  return expression;
+}
+
+// 解析 or 逻辑表达式，它的优先级低于 and。
+fn parseOr(parser) {
+  let expression = parseAnd(parser);
+  while checkType(parser, "OR") {
+    let operator = advanceToken(parser);
+    let right = parseAnd(parser);
+    expression = binaryExpr(expression, operator["lexeme"], right);
+  }
+  return expression;
+}
+
+// 解析 and 逻辑表达式，它的优先级低于相等比较。
+fn parseAnd(parser) {
+  let expression = parseEquality(parser);
+  while checkType(parser, "AND") {
+    let operator = advanceToken(parser);
+    let right = parseEquality(parser);
+    expression = binaryExpr(expression, operator["lexeme"], right);
   }
   return expression;
 }

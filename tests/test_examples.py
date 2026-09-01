@@ -574,6 +574,24 @@ class ExampleTest(unittest.TestCase):
             self.python_program_output(source_path),
         )
 
+    def test_fr_parser_matches_python_parser_for_logic_program(self) -> None:
+        """验证 FR Parser 子集能解析 and/or 逻辑表达式 AST。"""
+        source_path = "fr_parser_logic_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_parser(source_path),
+            self.python_parser_ast(source_path),
+        )
+
+    def test_fr_self_interpreter_runs_logic_program(self) -> None:
+        """验证 FR 写的解释器子集能按短路规则执行 and/or。"""
+        source_path = "fr_parser_logic_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_self_interpreter(source_path),
+            self.python_program_output(source_path),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

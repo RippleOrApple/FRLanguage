@@ -50,6 +50,7 @@ examples/fr_parser_collections_sample.fr.txt
 examples/fr_parser_control_flow_sample.fr.txt
 examples/fr_parser_function_sample.fr.txt
 examples/fr_parser_scope_sample.fr.txt
+examples/fr_parser_logic_sample.fr.txt
 ```
 
 它读取并扫描这段源码：
@@ -81,7 +82,7 @@ Python 写的 FR 解释器
   -> 输出和 Python 原生链路一致
 ```
 
-这个闭环暂时覆盖变量声明、`print`、字面量、变量读取、括号、一元表达式、基础二元表达式、List/Map 字面量、索引读取、变量赋值、索引赋值、`if`、`while`、block 局部作用域、函数声明、函数调用、闭包读取、跨函数全局调用、递归和 `return`。
+这个闭环暂时覆盖变量声明、`print`、字面量、变量读取、括号、一元表达式、基础二元表达式、`and/or` 短路逻辑、List/Map 字面量、索引读取、变量赋值、索引赋值、`if`、`while`、block 局部作用域、函数声明、函数调用、闭包读取、跨函数全局调用、递归和 `return`。
 
 ## 这个 demo 的限制
 
@@ -98,7 +99,7 @@ Python 写的 FR 解释器
 
 - 模块命名空间和导出控制：避免导入文件里的名字全部进入当前环境。
 - 评估 Future 是否进入自举子集：先判断它对 FR 工具链自举是否必要。
-- 扩展 FR 解释器子集：补更完整的运行时错误、内置函数调用桥接和逻辑短路表达式。
+- 扩展 FR 解释器子集：补更完整的运行时错误、内置函数调用桥接和 `break`。
 - 更完整的 FR Lexer：继续补齐错误场景、错误汇总或更多字面量形式。
 
 这些能力完成后，可以把当前 helper 文件整理成更正式的 FR 工具链目录。

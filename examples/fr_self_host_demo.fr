@@ -7,3 +7,4 @@ print(runSelfHostedSource(readFile("fr_parser_collections_sample.fr.txt")));
 print(runSelfHostedSource(readFile("fr_parser_control_flow_sample.fr.txt")));
 print(runSelfHostedSource(readFile("fr_parser_function_sample.fr.txt")));
 print(runSelfHostedSource(readFile("fr_parser_scope_sample.fr.txt")));
+print(runSelfHostedSource(readFile("fr_parser_logic_sample.fr.txt")));

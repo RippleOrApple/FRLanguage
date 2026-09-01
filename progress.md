@@ -128,3 +128,16 @@
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 提交并推送阶段 24.4：`dec9b50 Add self-hosted environment chain`。
+- 开始阶段 24.5：新增 `examples/fr_parser_logic_sample.fr.txt`，用 `mark` 函数副作用验证 `and/or` 是否真正短路。
+- 新增 FR Parser 逻辑表达式对照测试和自解释器逻辑短路端到端测试；新增测试先按预期失败，暴露 Parser 缺少 `and/or` 优先级层以及 Interpreter 预先求右侧的问题。
+- 扩展 `examples/fr_parser_helpers.fr`，新增 `parseOr` 和 `parseAnd`，让逻辑表达式 AST 与 Python Parser 对齐。
+- 扩展 `examples/fr_interpreter_helpers.fr`，让 `and/or` 在计算右侧前根据左侧真假短路。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_logic_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_logic_program`：2 个逻辑自举测试通过。
+- 扩展 `examples/fr_self_host_demo.fr`，新增逻辑短路样例输出 `[true, 0, false, 0, fallback, done, 2]`。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：23 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出基础、集合、控制流、函数、作用域和逻辑短路六个自举样例结果。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：100 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。

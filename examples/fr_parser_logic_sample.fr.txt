@@ -1,0 +1,14 @@
+let hits = 0;
+
+fn mark(value) {
+  hits = hits + 1;
+  return value;
+}
+
+print(true or mark("skip"));
+print(hits);
+print(false and mark("skip"));
+print(hits);
+print(false or mark("fallback"));
+print(mark(true) and "done");
+print(hits);

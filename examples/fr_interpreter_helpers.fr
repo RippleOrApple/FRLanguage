@@ -326,11 +326,25 @@ fn evaluateSelfUnaryExpr(state, expression) {
   return nil;
 }
 
-// 计算二元表达式，目前覆盖基础算术、比较和相等判断。
+// 计算二元表达式，and/or 会先判断左侧以支持短路求值。
 fn evaluateSelfBinaryExpr(state, expression) {
   let left = evaluateSelfExpr(state, expression["left"]);
-  let right = evaluateSelfExpr(state, expression["right"]);
   let operator = expression["operator"];
+
+  if operator == "or" {
+    if isSelfTruthy(left) {
+      return left;
+    }
+    return evaluateSelfExpr(state, expression["right"]);
+  }
+  if operator == "and" {
+    if !isSelfTruthy(left) {
+      return left;
+    }
+    return evaluateSelfExpr(state, expression["right"]);
+  }
+
+  let right = evaluateSelfExpr(state, expression["right"]);
 
   if operator == "+" {
     return left + right;
