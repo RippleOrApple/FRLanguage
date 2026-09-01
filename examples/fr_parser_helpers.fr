@@ -82,6 +82,16 @@ fn unaryExpr(operator, right) {
   return {"type": "UnaryExpr", "operator": operator, "right": right};
 }
 
+// 创建 await 表达式 AST Map。
+fn awaitExpr(expression) {
+  return {"type": "AwaitExpr", "expression": expression};
+}
+
+// 创建 future 块表达式 AST Map。
+fn futureExpr(body) {
+  return {"type": "FutureExpr", "body": body};
+}
+
 // 创建二元表达式 AST Map。
 fn binaryExpr(left, operator, right) {
   return {"type": "BinaryExpr", "left": left, "operator": operator, "right": right};
@@ -403,8 +413,12 @@ fn parseFactor(parser) {
   return expression;
 }
 
-// 解析 ! 和一元负号表达式。
+// 解析 await、! 和一元负号表达式。
 fn parseUnary(parser) {
+  if checkType(parser, "AWAIT") {
+    advanceToken(parser);
+    return awaitExpr(parseUnary(parser));
+  }
   if checkType(parser, "BANG") or checkType(parser, "MINUS") {
     let operator = advanceToken(parser);
     let right = parseUnary(parser);
@@ -466,6 +480,10 @@ fn parsePrimary(parser) {
   }
   if matchType(parser, "IDENTIFIER") {
     return variableExpr(previousToken(parser)["lexeme"]);
+  }
+  if matchType(parser, "FUTURE") {
+    consumeType(parser, "LEFT_BRACE", "future 后需要 '{'");
+    return futureExpr(parseBlock(parser));
   }
   if matchType(parser, "LEFT_BRACKET") {
     return parseListLiteral(parser);

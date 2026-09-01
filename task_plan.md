@@ -30,14 +30,15 @@
 - [x] 阶段 21：让 FR Parser 子集与 Python Parser 在小型样例上做结构化对照。
 - [x] 阶段 22：用 FR 实现解释器子集，先运行字面量、变量、二元表达式和 `print`。
 - [x] 阶段 23：打通最小自举闭环：Python FR 解释器运行 FR 工具链，FR 工具链运行小型 FR 程序。
-- [ ] 阶段 24：逐步扩展 FR Parser/Interpreter，覆盖 `if`、`while`、函数和 Future。
+- [x] 阶段 24：逐步扩展 FR Parser/Interpreter，覆盖 `if`、`while`、函数和 Future。
   - [x] 阶段 24.1：扩展 FR Parser/Interpreter 子集，支持 List/Map 字面量、索引读取、变量赋值和索引赋值。
   - [x] 阶段 24.2：扩展 FR Parser/Interpreter 子集，支持 `if`、`while` 和 block。
   - [x] 阶段 24.3：扩展 FR Parser/Interpreter 子集，支持函数声明、函数调用、递归和 `return`。
   - [x] 阶段 24.4：扩展 FR 自解释器环境模型，支持 block 局部作用域、函数闭包读取和跨函数全局调用。
   - [x] 阶段 24.5：扩展 FR Parser/Interpreter 子集，支持 `and` / `or` 逻辑表达式和短路求值。
   - [x] 阶段 24.6：扩展 FR Parser/Interpreter 子集，支持 `break` 跳出 `while`。
-  - [ ] 阶段 24.7：评估 Future 是否进入自举子集，避免过早复杂化。
+  - [x] 阶段 24.7：实现最小自举 Future/await：Future 延迟执行、await 触发执行并缓存结果。
+- [ ] 阶段 25：提升自举工具链质量，补运行时错误诊断、原生函数桥接边界和更正式的 FR 工具链组织。
 
 ## 决策
 
@@ -56,3 +57,4 @@
 - 自解释器环境链需要能判断 Map 中是否存在某个名字，因此 `hasKey(map, key)` 是自举作用域模型的低成本前置能力。
 - 自举解释器里的 `and/or` 必须在计算右侧表达式前处理，否则带函数调用或赋值副作用的右侧会破坏短路语义。
 - 自举解释器里的 `break` 可以复用 `return` 的 Map 信号传播方式，但应只由最近的 `while` 消费。
+- 自举 Future 第一版用 Map 表达 pending/resolved 状态，不做真正 Runtime 队列；这足够先验证语法、闭包和 await 缓存语义。

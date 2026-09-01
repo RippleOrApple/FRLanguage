@@ -6,6 +6,7 @@ from typing import Any
 
 from frlang.ast import (
     AssignExpr,
+    AwaitExpr,
     BinaryExpr,
     BreakStmt,
     BlockStmt,
@@ -13,6 +14,7 @@ from frlang.ast import (
     Expr,
     ExprStmt,
     FunctionStmt,
+    FutureExpr,
     GroupingExpr,
     IfStmt,
     IndexAssignExpr,
@@ -230,6 +232,19 @@ class ExampleTest(unittest.TestCase):
                 "type": "UnaryExpr",
                 "operator": expression.operator.lexeme,
                 "right": self.normalize_python_expr(expression.right),
+            }
+        if isinstance(expression, AwaitExpr):
+            return {
+                "type": "AwaitExpr",
+                "expression": self.normalize_python_expr(expression.expression),
+            }
+        if isinstance(expression, FutureExpr):
+            return {
+                "type": "FutureExpr",
+                "body": [
+                    self.normalize_python_stmt(statement)
+                    for statement in expression.body
+                ],
             }
         if isinstance(expression, BinaryExpr):
             return {
@@ -607,6 +622,24 @@ class ExampleTest(unittest.TestCase):
     def test_fr_self_interpreter_runs_break_program(self) -> None:
         """验证 FR 写的解释器子集能在 while 中处理 break。"""
         source_path = "fr_parser_break_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_self_interpreter(source_path),
+            self.python_program_output(source_path),
+        )
+
+    def test_fr_parser_matches_python_parser_for_future_program(self) -> None:
+        """验证 FR Parser 子集能解析 future 和 await AST。"""
+        source_path = "fr_parser_future_sample.fr.txt"
+
+        self.assertEqual(
+            self.run_fr_parser(source_path),
+            self.python_parser_ast(source_path),
+        )
+
+    def test_fr_self_interpreter_runs_future_program(self) -> None:
+        """验证 FR 写的解释器子集能延迟执行并 await Future。"""
+        source_path = "fr_parser_future_sample.fr.txt"
 
         self.assertEqual(
             self.run_fr_self_interpreter(source_path),

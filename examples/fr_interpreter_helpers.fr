@@ -218,6 +218,12 @@ fn evaluateSelfExpr(state, expression) {
   if expressionType == "CallExpr" {
     return evaluateSelfCallExpr(state, expression);
   }
+  if expressionType == "FutureExpr" {
+    return evaluateSelfFutureExpr(state, expression);
+  }
+  if expressionType == "AwaitExpr" {
+    return evaluateSelfAwaitExpr(state, expression);
+  }
   if expressionType == "GroupingExpr" {
     return evaluateSelfExpr(state, expression["expression"]);
   }
@@ -289,6 +295,42 @@ fn evaluateSelfCallExpr(state, expression) {
     index = index + 1;
   }
   return callSelfFunction(state, callee, arguments);
+}
+
+// 创建自举 Future；它先保存待执行 body，直到 await 时才运行。
+fn evaluateSelfFutureExpr(state, expression) {
+  return {
+    "type": "SelfFuture",
+    "state": "pending",
+    "body": expression["body"],
+    "closure": state["env"],
+    "value": nil
+  };
+}
+
+// await 自举 Future；pending 时执行一次，之后复用已保存结果。
+fn evaluateSelfAwaitExpr(state, expression) {
+  let futureValue = evaluateSelfExpr(state, expression["expression"]);
+  if futureValue["state"] == "pending" {
+    runSelfFuture(state, futureValue);
+  }
+  return futureValue["value"];
+}
+
+// 执行 Future body，并把 return 值或 nil 写回 Future。
+fn runSelfFuture(state, futureValue) {
+  let previousEnv = state["env"];
+  state["env"] = createSelfEnv(futureValue["closure"]);
+  let signal = executeSelfFunctionBody(state, futureValue["body"]);
+  state["env"] = previousEnv;
+
+  futureValue["state"] = "resolved";
+  if signal != nil and signal["type"] == "ReturnSignal" {
+    futureValue["value"] = signal["value"];
+    return nil;
+  }
+  futureValue["value"] = nil;
+  return nil;
 }
 
 // 调用自举函数对象，用声明时环境作为外层作用域创建参数局部环境。

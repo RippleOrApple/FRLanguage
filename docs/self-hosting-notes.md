@@ -52,6 +52,7 @@ examples/fr_parser_function_sample.fr.txt
 examples/fr_parser_scope_sample.fr.txt
 examples/fr_parser_logic_sample.fr.txt
 examples/fr_parser_break_sample.fr.txt
+examples/fr_parser_future_sample.fr.txt
 ```
 
 它读取并扫描这段源码：
@@ -83,15 +84,15 @@ Python 写的 FR 解释器
   -> 输出和 Python 原生链路一致
 ```
 
-这个闭环暂时覆盖变量声明、`print`、字面量、变量读取、括号、一元表达式、基础二元表达式、`and/or` 短路逻辑、List/Map 字面量、索引读取、变量赋值、索引赋值、`if`、`while`、`break`、block 局部作用域、函数声明、函数调用、闭包读取、跨函数全局调用、递归和 `return`。
+这个闭环暂时覆盖变量声明、`print`、字面量、变量读取、括号、一元表达式、基础二元表达式、`and/or` 短路逻辑、List/Map 字面量、索引读取、变量赋值、索引赋值、`if`、`while`、`break`、block 局部作用域、函数声明、函数调用、闭包读取、跨函数全局调用、递归、`return` 和最小 `future/await`。
 
 ## 这个 demo 的限制
 
 - 还没有覆盖 Python Lexer 的全部错误场景和恢复策略。
 - 字符串扫描已经支持少量常用转义，但还没有 Unicode 转义、十六进制转义等扩展形式。
 - 错误处理先用 `ERROR` Token 表达，还没有停止扫描或汇总诊断。
-- FR Parser 子集还没有覆盖 `future` 和 `await`。
-- FR 解释器子集还没有覆盖 Future、完整原生函数桥接和运行时错误诊断。
+- 自举 Future 目前是最小 Map 模型，还没有复刻 Python Runtime 队列、reject 状态或 Future 错误传播链。
+- FR 解释器子集还没有覆盖完整原生函数桥接和运行时错误诊断。
 - 模块系统还没有命名空间和导出控制。
 
 ## 下一步建议
@@ -99,8 +100,7 @@ Python 写的 FR 解释器
 优先补：
 
 - 模块命名空间和导出控制：避免导入文件里的名字全部进入当前环境。
-- 评估 Future 是否进入自举子集：先判断它对 FR 工具链自举是否必要。
-- 扩展 FR 解释器子集：补更完整的运行时错误、内置函数调用桥接和 Future。
+- 扩展 FR 解释器子集：补更完整的运行时错误、内置函数调用桥接和 Future 错误传播。
 - 更完整的 FR Lexer：继续补齐错误场景、错误汇总或更多字面量形式。
 
 这些能力完成后，可以把当前 helper 文件整理成更正式的 FR 工具链目录。

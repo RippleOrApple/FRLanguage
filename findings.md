@@ -41,6 +41,8 @@
 - 自举解释器执行 `and/or` 时不能预先计算右侧，否则会破坏短路规则，也会让副作用样例输出和 Python 实现不一致。
 - `break` 在 FR 自解释器里可以表达成 `{"type": "BreakSignal"}`，block 和 if 只负责传递，while 负责消费。
 - 函数调用边界暂时不会完整复刻 Python 对非法 break 的运行时错误；在自举错误模型补齐前，重点先覆盖 while 内合法 break。
+- 自举 Future 不必一开始复刻 Python Runtime 队列；用 Map 保存 `pending/resolved`、body、closure 和 value，可以先验证延迟执行、await 触发和结果缓存。
+- Future body 记录声明时环境后，可以覆盖“函数返回 Future，await 时仍能读取函数局部参数”的关键闭包场景。
 
 ## 路线判断
 

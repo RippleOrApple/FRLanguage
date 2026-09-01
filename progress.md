@@ -128,6 +128,20 @@
 - 运行 `python -m compileall src tests`：通过。
 - 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
 - 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
+- 提交并推送阶段 24.6：`89838a8 Add self-hosted break support`。
+- 开始阶段 24.7：新增 `examples/fr_parser_future_sample.fr.txt`，覆盖 Future 延迟执行、await 触发执行、结果缓存，以及 Future 捕获函数局部变量。
+- 新增 FR Parser Future 对照测试和自解释器 Future 端到端测试；新增测试先按预期失败，暴露 `future/await` 被解析成 nil 且无法运行的问题。
+- 扩展 `examples/fr_parser_helpers.fr`，新增 `AwaitExpr`、`FutureExpr` AST Map，支持 `await` 一元表达式和 `future { ... }` 块表达式。
+- 扩展 `examples/fr_interpreter_helpers.fr`，用 `SelfFuture` Map 表达 pending/resolved 状态、body、closure 和 value，`await` 第一次执行并缓存结果。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples.ExampleTest.test_fr_parser_matches_python_parser_for_future_program tests.test_examples.ExampleTest.test_fr_self_interpreter_runs_future_program`：2 个 Future 自举测试通过。
+- 扩展 `examples/fr_self_host_demo.fr`，新增 Future 样例输出 `[0, 41, 1, 41]`。
+- 阶段 24 收口：FR Parser/Interpreter 子集已覆盖集合、控制流、函数、作用域、逻辑短路、break 和最小 Future。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest tests.test_examples`：27 个 examples 测试通过。
+- 运行 `$env:PYTHONPATH='src'; python -m frlang.main examples/fr_self_host_demo.fr`：输出八个自举样例结果。
+- 运行 `$env:PYTHONPATH='src'; python -m unittest discover -s tests`：104 个测试通过。
+- 运行 `python -m compileall src tests`：通过。
+- 运行 `git diff --check`：通过，只有 Windows 换行转换提示。
+- 运行绝对路径扫描：没有命中源码、测试、示例和文档中的个人机器绝对路径。
 - 提交并推送阶段 24.5：`48a0107 Add self-hosted logical expressions`。
 - 开始阶段 24.6：新增 `examples/fr_parser_break_sample.fr.txt`，覆盖顶层 while 和函数内部 while 的 `break`。
 - 新增 FR Parser break 对照测试和自解释器 break 端到端测试；新增测试先按预期失败，暴露 `break;` 被解析成占位表达式且循环无法提前停止。

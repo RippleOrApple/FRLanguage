@@ -1,0 +1,14 @@
+let hits = 0;
+
+fn later(value) {
+  return future {
+    hits = hits + 1;
+    return value + hits;
+  };
+}
+
+let task = later(40);
+print(hits);
+print(await task);
+print(hits);
+print(await task);
